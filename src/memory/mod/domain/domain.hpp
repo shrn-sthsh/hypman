@@ -54,13 +54,13 @@ constexpr std::size_t memory_statistic_balloon_used
     = static_cast<std::size_t>(VIR_DOMAIN_MEMORY_STAT_ACTUAL_BALLOON);
 constexpr flag_code memory_statistic_domain_extra
     = static_cast<flag_code>(VIR_DOMAIN_MEMORY_STAT_UNUSED);
-constexpr flag_code number_of_memory_statistics 
+constexpr flag_code number_of_domain_memory_statistics 
     = static_cast<flag_code>(VIR_DOMAIN_MEMORY_STAT_NR);
 
 using memory_statistics_t = std::array
 <
     virDomainMemoryStatStruct, 
-    number_of_memory_statistics
+    number_of_domain_memory_statistics
 >;
 
 } // domain namespace

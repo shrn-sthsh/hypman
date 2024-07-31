@@ -11,7 +11,9 @@
 
 #include "memoryman.hpp"
 #include "domain/domain.hpp"
+#include "hardware/hardware.hpp"
 #include "lib/libvirt.hpp"
+#include "stat/statistics.hpp"
 
 
 static os::signal::signal_t exit_signal  = os::signal::SIG_NULL;
@@ -85,9 +87,12 @@ int main (int argc, char *argv[])
         }
     );
 
+    // Run memory load balancer
 	while (!static_cast<bool>(exit_signal))
 	{
-        manager::status_code status = manager::load_balancer(connection, interval);
+        manager::status_code status 
+            = manager::load_balancer(connection, interval);
+
         if (static_cast<bool>(status))
         {
             util::log::record
@@ -112,6 +117,8 @@ manager::status_code manager::load_balancer
 ) noexcept
 {
     libvirt::status_code status;
+
+    /*************************** DOMAIN INFORMATION ***************************/
 
     // Get list of domains
     libvirt::domain::list_t domain_list;
@@ -176,6 +183,28 @@ manager::status_code manager::load_balancer
 
         return EXIT_FAILURE;
     }
+
+
+    /*************************** SYSTEM INFORMATION ***************************/
+    
+    // Get hardware memory statistics
+    util::stat::slong_t hardware_memory_limit;
+    status = libvirt::hardware::hardware_memory_limit
+    (
+        connection, 
+        hardware_memory_limit
+    );
+    if (static_cast<bool>(status))
+    {
+        util::log::record
+        (
+            "Unable to retrieve hardware memory statistics",
+            util::log::ABORT
+        );
+
+        return EXIT_FAILURE;
+    }
+
 
     return EXIT_SUCCESS;
 }

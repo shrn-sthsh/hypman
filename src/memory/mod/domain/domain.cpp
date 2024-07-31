@@ -169,7 +169,7 @@ libvirt::status_code libvirt::domain::ranking
         (
             domain.get(),
             memory_statistics.data(),
-            libvirt::domain::number_of_memory_statistics,
+            libvirt::domain::number_of_domain_memory_statistics,
             libvirt::FLAG_NULL
         );
         if (static_cast<bool>(status))
@@ -177,7 +177,7 @@ libvirt::status_code libvirt::domain::ranking
             util::log::record
             (
                 "Unable to retrieve domain " + std::to_string(rank) 
-                    + "'s memory statistics", 
+                    + "'s memory statistics through libvirt API", 
                 util::log::FLAG
             );
         }
@@ -189,19 +189,33 @@ libvirt::status_code libvirt::domain::ranking
             domain.get(), 
             &domain_information
         );
+        if (static_cast<bool>(status))
+        {
+            util::log::record
+            (
+                "Unable to retrieve domain " + std::to_string(rank) 
+                    + "'s maxmimum memory limit through libvirt API", 
+                util::log::FLAG
+            );
+        }
         libvirt::domain::data_t &domain_data = domain_ranking[rank];
         domain_data.domain_memory_limit = domain_information.maxMem;
 
         // Get remaining statistics 
-        for (const libvirt::virDomainMemoryStatStruct &statistic: memory_statistics)
+        using memory_statistic_t = libvirt::virDomainMemoryStatStruct;
+        bool domain_extra_found = false, balloon_used_found = false;
+        for (const memory_statistic_t &statistic: memory_statistics)
         {
-            libvirt::flag_code flag = static_cast<libvirt::flag_code>(statistic.tag);
+            libvirt::flag_code flag 
+                = static_cast<libvirt::flag_code>(statistic.tag);
 
             // Get the memory used up by balloon
             if (flag == memory_statistic_balloon_used)
             {
                 domain_data.balloon_memory_used
                     = static_cast<util::stat::slong_t>(statistic.val);
+
+                balloon_used_found = true;
             }
 
             // Get the memory unused by domain
@@ -209,8 +223,32 @@ libvirt::status_code libvirt::domain::ranking
             {
                 domain_data.domain_memory_extra
                     = static_cast<util::stat::slong_t>(statistic.val);
+
+                domain_extra_found = true;
             }
-        }       
+        }
+        if (!balloon_used_found)
+        {
+            util::log::record
+            (
+                "Unable to retrieve domain " + std::to_string(rank) 
+                    + "'s balloon driver's used memory through libvirt API", 
+                util::log::ERROR
+            );
+
+            return EXIT_FAILURE;
+        }
+        if (!domain_extra_found)
+        {
+            util::log::record
+            (
+                "Unable to retrieve domain " + std::to_string(rank) 
+                    + "'s unused memory through libvirt API", 
+                util::log::ERROR
+            );
+            
+            return EXIT_FAILURE;
+        }
     }
 
     return EXIT_SUCCESS;
