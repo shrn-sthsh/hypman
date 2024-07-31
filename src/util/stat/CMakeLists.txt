@@ -1,14 +1,14 @@
 # Define local headers & sources
-set(LOG_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/record.cpp
+set(STAT_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/statistics.cpp
 )
 
 # Create the library from the source files
 add_library(
-  log STATIC ${LOG_SOURCES}
+  stat STATIC ${STAT_SOURCES}
 )
 
 # Add headers to includes
 target_include_directories(
-  log PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..
+  stat PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
