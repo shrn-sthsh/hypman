@@ -21,12 +21,14 @@ using rank_t   = std::size_t;
 using domain_t = std::shared_ptr<libvirt::virDomain>;
 using list_t   = std::vector<domain_t>;
 
+[[maybe_unused]]
 status_code list
 (
     const connection_t &connection,
           list_t       &domain_list
 ) noexcept;
 
+[[nodiscard("Collection period set action must be checked")]]
 status_code set_collection_period
 (
           list_t                    &domain_list, 
@@ -44,6 +46,7 @@ typedef struct
 
 using data_t = std::vector<datum_t>;
 
+[[maybe_unused]]
 status_code ranking
 (
     list_t &domain_list,

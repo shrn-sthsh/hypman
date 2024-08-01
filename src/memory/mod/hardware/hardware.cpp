@@ -1,9 +1,9 @@
 #include <cstdlib>
 
 #include <lib/libvirt.hpp>
+#include <stat/statistics.hpp>
 
 #include "hardware.hpp"
-#include "stat/statistics.hpp"
 
 
 libvirt::status_code libvirt::hardware::hardware_memory_limit

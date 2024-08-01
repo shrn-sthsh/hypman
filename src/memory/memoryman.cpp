@@ -9,9 +9,9 @@
 #include <lib/signal.hpp>
 #include <log/record.hpp>
 
+#include "sys/scheduler.hpp"
 #include "domain/domain.hpp"
 #include "hardware/hardware.hpp"
-#include "sys/scheduler.hpp"
 
 #include "memoryman.hpp"
 

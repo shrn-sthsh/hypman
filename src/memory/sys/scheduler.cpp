@@ -1,13 +1,14 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
-
-#include <lib/libvirt.hpp>
 #include <string>
 
-#include "scheduler.hpp"
+#include <lib/libvirt.hpp>
+#include <stat/statistics.hpp>
+
 #include "domain/domain.hpp"
-#include "stat/statistics.hpp"
+
+#include "scheduler.hpp"
 
 
 constexpr util::stat::slong_t MINIMUM_SYSTEM_MEMORY = 200 << 10;

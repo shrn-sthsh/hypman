@@ -3,8 +3,7 @@
 #include <vector>
 
 #include <lib/libvirt.hpp>
-
-#include "stat/statistics.hpp"
+#include <stat/statistics.hpp>
 
 
 namespace libvirt 
@@ -13,6 +12,7 @@ namespace libvirt
 namespace hardware
 {
 
+[[maybe_unused]]
 status_code hardware_memory_limit
 (
     const connection_t        &connection,

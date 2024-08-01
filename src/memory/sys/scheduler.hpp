@@ -1,14 +1,16 @@
 #pragma once
 
+#include <stat/statistics.hpp>
 
 #include "domain/domain.hpp"
-#include "stat/statistics.hpp"
+
 
 namespace manager 
 {
 
 using status_code = int;
 
+[[nodiscard("Scheduler exit status must be checked")]]
 status_code scheduler
 (
     libvirt::domain::list_t &domain_list,
