@@ -120,8 +120,8 @@ libvirt::status_code libvirt::domain::set_collection_period
 
 libvirt::status_code libvirt::domain::ranking
 (
-    libvirt::domain::list_t    &domain_list, 
-    libvirt::domain::ranking_t &domain_ranking
+     libvirt::domain::list_t &domain_list, 
+     libvirt::domain::data_t &domain_data
 ) noexcept
 {
     // Check list size
@@ -138,7 +138,7 @@ libvirt::status_code libvirt::domain::ranking
     }
 
     // Check domaib ranking size
-    if (domain_ranking.size() != number_of_domains)
+    if (domain_data.size() != number_of_domains)
     {
         util::log::record
         (
@@ -146,14 +146,14 @@ libvirt::status_code libvirt::domain::ranking
             util::log::FLAG
         );
         
-        domain_ranking.clear();
-        domain_ranking.resize(number_of_domains);
+        domain_data.clear();
+        domain_data.resize(number_of_domains);
 
         std::fill
         (
-            domain_ranking.begin(), 
-            domain_ranking.end(), 
-            data_t()
+            domain_data.begin(), 
+            domain_data.end(), 
+            datum_t()
         );
     }
 
@@ -198,8 +198,8 @@ libvirt::status_code libvirt::domain::ranking
                 util::log::FLAG
             );
         }
-        libvirt::domain::data_t &domain_data = domain_ranking[rank];
-        domain_data.domain_memory_limit = domain_information.maxMem;
+        libvirt::domain::datum_t &domain_datum = domain_data[rank];
+        domain_datum.domain_memory_limit = domain_information.maxMem;
 
         // Get remaining statistics 
         using memory_statistic_t = libvirt::virDomainMemoryStatStruct;
@@ -212,7 +212,7 @@ libvirt::status_code libvirt::domain::ranking
             // Get the memory used up by balloon
             if (flag == memory_statistic_balloon_used)
             {
-                domain_data.balloon_memory_used
+                domain_datum.balloon_memory_used
                     = static_cast<util::stat::slong_t>(statistic.val);
 
                 balloon_used_found = true;
@@ -221,7 +221,7 @@ libvirt::status_code libvirt::domain::ranking
             // Get the memory unused by domain
             if (flag == memory_statistic_domain_extra)
             {
-                domain_data.domain_memory_extra
+                domain_datum.domain_memory_extra
                     = static_cast<util::stat::slong_t>(statistic.val);
 
                 domain_extra_found = true;

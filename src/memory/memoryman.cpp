@@ -9,11 +9,11 @@
 #include <lib/signal.hpp>
 #include <log/record.hpp>
 
-#include "memoryman.hpp"
 #include "domain/domain.hpp"
 #include "hardware/hardware.hpp"
-#include "lib/libvirt.hpp"
-#include "stat/statistics.hpp"
+#include "sys/scheduler.hpp"
+
+#include "memoryman.hpp"
 
 
 static os::signal::signal_t exit_signal  = os::signal::SIG_NULL;
@@ -97,7 +97,7 @@ int main (int argc, char *argv[])
         {
             util::log::record
             (
-                "Schuduler exited on terminating error", 
+                "Scheduler exited on terminating error", 
                 util::log::ABORT
             );
 
@@ -162,16 +162,16 @@ manager::status_code manager::load_balancer
 
     // Get memory statistics for each domain
     std::size_t number_of_domains = domain_list.size();
-    libvirt::domain::ranking_t domain_ranking
+    libvirt::domain::data_t domain_data
     (
         number_of_domains, 
-        libvirt::domain::data_t()
+        libvirt::domain::datum_t()
     );
 
     status = libvirt::domain::ranking
     (
         domain_list,
-        domain_ranking
+        domain_data
     );
     if (static_cast<bool>(status))
     {
@@ -205,6 +205,26 @@ manager::status_code manager::load_balancer
         return EXIT_FAILURE;
     }
 
+    
+    /*********************** MEMORY MOVEMENT SCHEDULER ************************/
+    
+    // Run scheduler to determine domains' memory sizes and execute reallocation
+    status = manager::scheduler
+    (
+        domain_list, 
+        domain_data, 
+        hardware_memory_limit
+    );
+    if (static_cast<bool>(status))
+    {
+        util::log::record
+        (
+            "Fault incurred in scheduler processing",
+            util::log::ABORT
+        );
+
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }

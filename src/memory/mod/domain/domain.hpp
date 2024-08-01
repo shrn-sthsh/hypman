@@ -40,14 +40,14 @@ typedef struct
     util::stat::slong_t domain_memory_extra;
     util::stat::slong_t domain_memory_limit;
     std::double_t       domain_memory_delta;
-} data_t;
+} datum_t;
 
-using ranking_t = std::vector<data_t>;
+using data_t = std::vector<datum_t>;
 
 status_code ranking
 (
-    list_t    &domain_list,
-    ranking_t &domain_ranking
+    list_t &domain_list,
+    data_t &domain_data
 ) noexcept;
 
 constexpr std::size_t memory_statistic_balloon_used
