@@ -184,11 +184,11 @@ manager::status_code manager::load_balancer
     /*************************** SYSTEM INFORMATION ***************************/
     
     // Get hardware memory statistics
-    util::stat::slong_t hardware_memory_limit;
-    status = libvirt::hardware::hardware_memory_limit
+    util::stat::slong_t system_memory_limit;
+    status = libvirt::hardware::system_memory_limit
     (
         connection, 
-        hardware_memory_limit
+        system_memory_limit
     );
     if (static_cast<bool>(status))
     {
@@ -208,7 +208,7 @@ manager::status_code manager::load_balancer
     status = manager::scheduler
     (
         domain_data, 
-        hardware_memory_limit
+        system_memory_limit
     );
     if (static_cast<bool>(status))
     {

@@ -7,10 +7,10 @@
 #include "hardware.hpp"
 
 
-libvirt::status_code libvirt::hardware::hardware_memory_limit
+libvirt::status_code libvirt::hardware::system_memory_limit
 (
     const connection_t        &connection, 
-          util::stat::slong_t &hardware_memory_limit
+          util::stat::slong_t &system_memory_limit
 ) noexcept
 {
     libvirt::status_code status;
@@ -70,9 +70,9 @@ libvirt::status_code libvirt::hardware::hardware_memory_limit
             std::string(field).compare(node_memory_statistics_total)
         );
         if (memory_limit_found)
-            hardware_memory_limit = static_cast<util::stat::slong_t>(value);
+            system_memory_limit = static_cast<util::stat::slong_t>(value);
     }
-    if (!hardware_memory_limit)
+    if (!system_memory_limit)
     {
         util::log::record
         (

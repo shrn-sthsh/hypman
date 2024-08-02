@@ -44,33 +44,13 @@ status_code set_collection_period
 typedef struct datum_t
 {
     // Default constructor 
-    datum_t():
-        domain(nullptr),
-        balloon_memory_used(0),
-        domain_memory_extra(0),
-        domain_memory_limit(0),
-        domain_memory_delta(0.0) 
-    {}
-
-    // Parameterized constructor
-    datum_t
-    (
-        domain_t            domain, 
-        util::stat::slong_t balloon_memory_used,
-        util::stat::slong_t domain_memory_extra,
-        util::stat::slong_t domain_memory_limit,
-        std::double_t       domain_memory_delta
-    ):
-        domain(std::move(domain)), 
-        balloon_memory_used(balloon_memory_used),
-        domain_memory_extra(domain_memory_extra),
-        domain_memory_limit(domain_memory_limit),
-        domain_memory_delta(domain_memory_delta) 
-    {}
+    datum_t(): domain(nullptr) {}
 
     // Move constructor
     datum_t(datum_t &&other) noexcept:
+        rank(other.rank),
         domain(std::move(other.domain)), 
+        number_of_vCPUs(other.number_of_vCPUs),
         balloon_memory_used(other.balloon_memory_used),
         domain_memory_extra(other.domain_memory_extra),
         domain_memory_limit(other.domain_memory_limit),
@@ -81,7 +61,16 @@ typedef struct datum_t
     datum_t &operator=(datum_t &&other) noexcept
     {
         if (this != &other)
-            this->domain = std::move(other.domain);
+        {
+            this->rank                = other.rank; 
+            this->domain              = std::move(other.domain);
+            this->number_of_vCPUs     = other.number_of_vCPUs; 
+            this->balloon_memory_used = other.balloon_memory_used; 
+            this->domain_memory_extra = other.domain_memory_extra; 
+            this->domain_memory_extra = other.domain_memory_extra; 
+            this->domain_memory_limit = other.domain_memory_limit; 
+            this->domain_memory_delta = other.domain_memory_delta; 
+        }
 
         return *this;
     }
@@ -93,6 +82,7 @@ typedef struct datum_t
     // Fields
     rank_t              rank;
     domain_t            domain;
+    std::size_t         number_of_vCPUs;
     util::stat::slong_t balloon_memory_used;
     util::stat::slong_t domain_memory_extra;
     util::stat::slong_t domain_memory_limit;

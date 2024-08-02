@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -23,7 +24,7 @@ constexpr std::double_t CHANGE_COEFFICIENT = 0.200;
 manager::status_code manager::scheduler
 (
     libvirt::domain::data_t &domain_data, 
-    util::stat::slong_t      hardware_memory_limit
+    util::stat::slong_t      system_memory_limit
 )
 {
     // Check domain consistency 
@@ -40,102 +41,124 @@ manager::status_code manager::scheduler
 
 
     /******************** DETERMINE HOW MEMORY NEEDS TO MOVE ******************/
+    libvirt::domain::data_t suppliers; 
+    suppliers.reserve(domain_data.size());
+
+    libvirt::domain::data_t demanders; 
+    demanders.reserve(domain_data.size());
 	
 	// Determine memory movement of each domain
-	for (libvirt::domain::datum_t &domain_datum: domain_data)
+    util::stat::slong_t available_memory 
+		= system_memory_limit - MINIMUM_SYSTEM_MEMORY;
+
+    libvirt::domain::data_t::iterator datum;
+	for (datum = domain_data.begin(); datum != domain_data.end(); ++datum)
     {
 		// Domain's unused memory and memory limit
-        double domain_rank_unused_memory = 
-            static_cast<std::double_t>(domain_datum.domain_memory_extra);
-		double domain_rank_memory_limit = 
-            static_cast<std::double_t>(domain_datum.domain_memory_limit);
+        std::double_t domain_memory_extra = 
+            static_cast<std::double_t>(datum->domain_memory_extra);
+        std::double_t domain_memory_limit = 
+            static_cast<std::double_t>(datum->domain_memory_limit);
 
 		// Movement thresholds
-		double SUPPLY_THRESHOLD = SUPPLY_COEFFICIENT * domain_rank_memory_limit;
-		double DEMAND_THRESHOLD = DEMAND_COEFFICIENT * domain_rank_memory_limit;
+        std::double_t SUPPLY_THRESHOLD = SUPPLY_COEFFICIENT * domain_memory_limit;
+        std::double_t DEMAND_THRESHOLD = DEMAND_COEFFICIENT * domain_memory_limit;
         
 		// Domain can supply memory (domain loses memory)
-        if (domain_rank_unused_memory > SUPPLY_THRESHOLD)
+        if (domain_memory_extra > SUPPLY_THRESHOLD)
         {
-            domain_datum.domain_memory_delta
+            datum->domain_memory_delta
 				= -1 * MINIMUM_DOMAIN_MEMORY * CHANGE_COEFFICIENT;
+            suppliers.emplace_back(std::move(*datum));
 
             continue;
         }
 
 		// Domain needs more memory (domain takes memory)
-        if (domain_rank_unused_memory < DEMAND_THRESHOLD)
+        if (domain_memory_extra < DEMAND_THRESHOLD)
         {
-            domain_datum.domain_memory_delta 
+            datum->domain_memory_delta 
 				= MINIMUM_DOMAIN_MEMORY * CHANGE_COEFFICIENT;
+            demanders.emplace_back(std::move(*datum));
 
             continue;
         }
 
 		// No change to domain's memory
-        domain_datum.domain_memory_delta = 0.0;
+        datum->domain_memory_delta = 0.0;
+        available_memory -= datum->balloon_memory_used;
     }
+    domain_data.clear();
+
+    
+    /******************** SORT DOMAINS BY MEMORY PRESSURE *********************/
+
+    // Sort by memory pressure per vCPU in non-increasing order regardless 
+    // of movement direction for an intertwined list
+    std::sort
+    (
+        domain_data.begin(), domain_data.end(),
+        [] 
+        (
+            const libvirt::domain::datum_t &datum_A, 
+            const libvirt::domain::datum_t &datum_B
+        )
+        {
+            std::double_t pressure_per_vCPU_A 
+                = std::abs(datum_A.domain_memory_delta) 
+                / datum_A.number_of_vCPUs;
+
+            std::double_t pressure_per_vCPU_B
+                = std::abs(datum_B.domain_memory_delta) 
+                / datum_B.number_of_vCPUs;
+
+            return pressure_per_vCPU_A > pressure_per_vCPU_B;
+        }
+    );
 
 
     /*********************** MEMORY REDISTRBUTION POLICY **********************/
 	
 	// Save the number of domains needing memory
-    std::size_t number_of_requesting_domains = 0;
+    std::size_t number_of_requesting_domains = demanders.size();
 
 	// System reclaiming memory from supplying domains
     libvirt::status_code status;
-	for (const libvirt::domain::datum_t &datum: domain_data)
+	for (const libvirt::domain::datum_t &datum: suppliers)
 	{
         util::stat::ulong_t memory_chunk 
             = datum.balloon_memory_used
 			+ datum.domain_memory_delta;
 		
 		// Take back memory if domain is supplying
-		if (datum.domain_memory_delta > 0)
+        status = libvirt::virDomainSetMemory
+        (
+            datum.domain.get(), 
+            memory_chunk
+        );
+        if (static_cast<bool>(status))
         {
-			status = libvirt::virDomainSetMemory
+            util::log::record
             (
-                datum.domain.get(), 
-                memory_chunk
+                "Unable to set domain " + std::to_string(datum.rank)
+                    + "'s memory to " + std::to_string(memory_chunk) 
+                    + " bytes",
+                util::log::ERROR
             );
-            if (static_cast<bool>(status))
-            {
-                util::log::record
-                (
-                    "Unable to set domain " + std::to_string(datum.rank)
-                        + "'s memory to " + std::to_string(memory_chunk) 
-                        + " bytes",
-                    util::log::ERROR
-                );
 
-                return EXIT_FAILURE;
-            }
+            return EXIT_FAILURE;
         }
-
-		// Add to number of domains if domain is requesting
-		if (datum.domain_memory_delta < 0)
-			number_of_requesting_domains += 1;
 	}
 
 	// System providing memory to requesting domains
-	for (const libvirt::domain::datum_t &datum: domain_data)
-	{
-		util::stat::slong_t available_memory 
-			= hardware_memory_limit - MINIMUM_SYSTEM_MEMORY;	
+	for (const libvirt::domain::datum_t &datum: demanders)
+	{	
         util::stat::ulong_t maximum_chunk_size
             = static_cast<util::stat::ulong_t>(datum.domain_memory_limit);
 
-        std::double_t domain_memory_delta 
-            = datum.domain_memory_delta;
-        std::double_t domain_memory_delta_magnitude
-            = std::abs(domain_memory_delta);
-
-		// Continue on to give memory to requesting domains
-		if (domain_memory_delta > 0) 
-            continue;
-
         // Requesting memory size is satisfiable by system
-        if (domain_memory_delta_magnitude < available_memory)
+        std::double_t domain_memory_delta = datum.domain_memory_delta;
+        if (std::abs(domain_memory_delta) < available_memory)
         {	
             util::stat::ulong_t memory_chunk 
                 = datum.balloon_memory_used + domain_memory_delta;
@@ -173,7 +196,7 @@ manager::status_code manager::scheduler
         // Equally split remaining if size not satisfiable
         util::stat::ulong_t partitioned_chunk_size = std::ceil
         (
-            static_cast<std::double_t>(domain_memory_delta_magnitude)
+            static_cast<std::double_t>(std::abs(domain_memory_delta))
                 / number_of_requesting_domains
         );
         bool domains_requesting = number_of_requesting_domains > 0;

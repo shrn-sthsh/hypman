@@ -179,12 +179,12 @@ libvirt::status_code libvirt::domain::data
             );
         }
 
-        // Get domain's maxmimum memory limit
-        libvirt::virDomainInfo domain_information; 
+        // Get domain's maxmimum memory limit and number of vCPUs
+        libvirt::virDomainInfo information; 
         status = libvirt::virDomainGetInfo
         (
             datum.domain.get(), 
-            &domain_information
+            &information
         );
         if (static_cast<bool>(status))
         {
@@ -195,11 +195,12 @@ libvirt::status_code libvirt::domain::data
                 util::log::FLAG
             );
         }
-        datum.domain_memory_limit = domain_information.maxMem;
+        datum.domain_memory_limit = information.maxMem;
+        datum.number_of_vCPUs     = information.nrVirtCpu;
 
         // Get remaining statistics 
-        using memory_statistic_t = libvirt::virDomainMemoryStatStruct;
         bool domain_extra_found = false, balloon_used_found = false;
+        using memory_statistic_t = libvirt::virDomainMemoryStatStruct;
         for (const memory_statistic_t &statistic: memory_statistics)
         {
             libvirt::flag_code flag 
