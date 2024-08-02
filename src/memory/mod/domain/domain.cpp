@@ -39,7 +39,7 @@ libvirt::status_code libvirt::domain::list
     {
         util::log::record
         (
-            "domain::list recieved with incorrect number of domains",
+            "domain::list_t recieved with incorrect number of domains",
             util::log::FLAG
         );
         
@@ -86,7 +86,7 @@ libvirt::status_code libvirt::domain::set_collection_period
     {
         util::log::record
         (
-            "domain::list is empty", 
+            "domain::list_t is empty", 
             util::log::ERROR
         );
 
@@ -130,19 +130,19 @@ libvirt::status_code libvirt::domain::data
     {
         util::log::record
         (
-            "domain::list is empty", 
+            "domain::list_t is empty", 
             util::log::ERROR
         );
 
         return EXIT_FAILURE;
     }
 
-    // Check domaib ranking size
+    // Check domain data size
     if (domain_data.size() != number_of_domains)
     {
         util::log::record
         (
-            "domain::list recieved with incorrect number of domains",
+            "domain::list_t recieved with incorrect number of domains",
             util::log::FLAG
         );
         

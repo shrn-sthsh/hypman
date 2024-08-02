@@ -21,7 +21,7 @@ namespace domain
 using rank_t   = std::size_t;
 using domain_t = std::unique_ptr
 <
-    libvirt::virDomain,
+    virDomain,
     std::function<void (virDomain *)>
 >;
 using list_t   = std::vector<domain_t>;
