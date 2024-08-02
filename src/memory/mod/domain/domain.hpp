@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -18,7 +19,11 @@ namespace domain
 {
 
 using rank_t   = std::size_t;
-using domain_t = std::shared_ptr<libvirt::virDomain>;
+using domain_t = std::unique_ptr
+<
+    libvirt::virDomain,
+    std::function<void (virDomain *)>
+>;
 using list_t   = std::vector<domain_t>;
 
 [[maybe_unused]]
@@ -36,8 +41,58 @@ status_code set_collection_period
 ) noexcept;
 
 
-typedef struct
+typedef struct datum_t
 {
+    // Default constructor 
+    datum_t():
+        domain(nullptr),
+        balloon_memory_used(0),
+        domain_memory_extra(0),
+        domain_memory_limit(0),
+        domain_memory_delta(0.0) 
+    {}
+
+    // Parameterized constructor
+    datum_t
+    (
+        domain_t            domain, 
+        util::stat::slong_t balloon_memory_used,
+        util::stat::slong_t domain_memory_extra,
+        util::stat::slong_t domain_memory_limit,
+        std::double_t       domain_memory_delta
+    ):
+        domain(std::move(domain)), 
+        balloon_memory_used(balloon_memory_used),
+        domain_memory_extra(domain_memory_extra),
+        domain_memory_limit(domain_memory_limit),
+        domain_memory_delta(domain_memory_delta) 
+    {}
+
+    // Move constructor
+    datum_t(datum_t &&other) noexcept:
+        domain(std::move(other.domain)), 
+        balloon_memory_used(other.balloon_memory_used),
+        domain_memory_extra(other.domain_memory_extra),
+        domain_memory_limit(other.domain_memory_limit),
+        domain_memory_delta(other.domain_memory_delta)
+    {}
+
+    // Move assignment
+    datum_t &operator=(datum_t &&other) noexcept
+    {
+        if (this != &other)
+            this->domain = std::move(other.domain);
+
+        return *this;
+    }
+
+    // Delete copy constructor and copy assignment
+    datum_t(const datum_t &datum)            = delete;
+    datum_t &operator=(const datum_t &datum) = delete;
+
+    // Fields
+    rank_t              rank;
+    domain_t            domain;
     util::stat::slong_t balloon_memory_used;
     util::stat::slong_t domain_memory_extra;
     util::stat::slong_t domain_memory_limit;
@@ -47,7 +102,7 @@ typedef struct
 using data_t = std::vector<datum_t>;
 
 [[maybe_unused]]
-status_code ranking
+status_code data
 (
     list_t &domain_list,
     data_t &domain_data

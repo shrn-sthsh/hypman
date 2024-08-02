@@ -33,7 +33,7 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	} 
     
-    std::function<bool(const char *)> is_interval = [](const char *string) 
+    std::function<bool (const char *)> is_interval = [](const char *string) 
     {
         return std::all_of
         (
@@ -77,7 +77,7 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-    // Check for exit signal
+    // Set singal handler
     os::signal::signal
     (
         os::signal::SIG_INT,
@@ -162,13 +162,9 @@ manager::status_code manager::load_balancer
 
     // Get memory statistics for each domain
     std::size_t number_of_domains = domain_list.size();
-    libvirt::domain::data_t domain_data
-    (
-        number_of_domains, 
-        libvirt::domain::datum_t()
-    );
+    libvirt::domain::data_t domain_data(number_of_domains);
 
-    status = libvirt::domain::ranking
+    status = libvirt::domain::data
     (
         domain_list,
         domain_data
@@ -211,7 +207,6 @@ manager::status_code manager::load_balancer
     // Run scheduler to determine domains' memory sizes and execute reallocation
     status = manager::scheduler
     (
-        domain_list, 
         domain_data, 
         hardware_memory_limit
     );

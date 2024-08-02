@@ -1,7 +1,6 @@
 #pragma once
 
-
-#include "log/record.hpp"
+#include <functional>
 #include <memory>
 
 namespace libvirt
@@ -14,6 +13,10 @@ using flag_code   = int;
 
 constexpr flag_code FLAG_NULL = 0;
 
-using connection_t = std::shared_ptr<virConnect>;
+using connection_t = std::unique_ptr
+<
+    virConnect, 
+    std::function<void (virConnect *)>
+>;
 
 } // libvirt namespace

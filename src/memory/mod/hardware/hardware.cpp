@@ -1,6 +1,7 @@
 #include <cstdlib>
 
 #include <lib/libvirt.hpp>
+#include <log/record.hpp>
 #include <stat/statistics.hpp>
 
 #include "hardware.hpp"

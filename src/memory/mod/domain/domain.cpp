@@ -118,7 +118,7 @@ libvirt::status_code libvirt::domain::set_collection_period
 }
 
 
-libvirt::status_code libvirt::domain::ranking
+libvirt::status_code libvirt::domain::data
 (
      libvirt::domain::list_t &domain_list, 
      libvirt::domain::data_t &domain_data
@@ -147,27 +147,24 @@ libvirt::status_code libvirt::domain::ranking
         );
         
         domain_data.clear();
-        domain_data.resize(number_of_domains);
-
-        std::fill
-        (
-            domain_data.begin(), 
-            domain_data.end(), 
-            datum_t()
-        );
+        domain_data.resize(number_of_domains); 
     }
 
     // Get memory statistics for each domain
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
-    {         
-        libvirt::domain::domain_t &domain = domain_list[rank];
-        libvirt::status_code       status;
+    { 
+        libvirt::status_code status; 
+
+        // Pass on domain reference 
+        libvirt::domain::datum_t &datum = domain_data[rank];
+        datum.rank   = rank;
+        datum.domain = std::move(domain_list[rank]);
 
         // Get memory statistics for this domain 
         libvirt::domain::memory_statistics_t memory_statistics;
         status = libvirt::virDomainMemoryStats
         (
-            domain.get(),
+            datum.domain.get(),
             memory_statistics.data(),
             libvirt::domain::number_of_domain_memory_statistics,
             libvirt::FLAG_NULL
@@ -186,7 +183,7 @@ libvirt::status_code libvirt::domain::ranking
         libvirt::virDomainInfo domain_information; 
         status = libvirt::virDomainGetInfo
         (
-            domain.get(), 
+            datum.domain.get(), 
             &domain_information
         );
         if (static_cast<bool>(status))
@@ -198,8 +195,7 @@ libvirt::status_code libvirt::domain::ranking
                 util::log::FLAG
             );
         }
-        libvirt::domain::datum_t &domain_datum = domain_data[rank];
-        domain_datum.domain_memory_limit = domain_information.maxMem;
+        datum.domain_memory_limit = domain_information.maxMem;
 
         // Get remaining statistics 
         using memory_statistic_t = libvirt::virDomainMemoryStatStruct;
@@ -212,7 +208,7 @@ libvirt::status_code libvirt::domain::ranking
             // Get the memory used up by balloon
             if (flag == memory_statistic_balloon_used)
             {
-                domain_datum.balloon_memory_used
+                datum.balloon_memory_used
                     = static_cast<util::stat::slong_t>(statistic.val);
 
                 balloon_used_found = true;
@@ -221,7 +217,7 @@ libvirt::status_code libvirt::domain::ranking
             // Get the memory unused by domain
             if (flag == memory_statistic_domain_extra)
             {
-                domain_datum.domain_memory_extra
+                datum.domain_memory_extra
                     = static_cast<util::stat::slong_t>(statistic.val);
 
                 domain_extra_found = true;
@@ -248,7 +244,7 @@ libvirt::status_code libvirt::domain::ranking
             );
             
             return EXIT_FAILURE;
-        }
+        } 
     }
 
     return EXIT_SUCCESS;

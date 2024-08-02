@@ -4,6 +4,7 @@
 #include <string>
 
 #include <lib/libvirt.hpp>
+#include <log/record.hpp>
 #include <stat/statistics.hpp>
 
 #include "domain/domain.hpp"
@@ -21,18 +22,16 @@ constexpr std::double_t CHANGE_COEFFICIENT = 0.200;
 
 manager::status_code manager::scheduler
 (
-    libvirt::domain::list_t &domain_list, 
     libvirt::domain::data_t &domain_data, 
     util::stat::slong_t      hardware_memory_limit
 )
 {
     // Check domain consistency 
-    std::size_t number_of_domains = domain_list.size();
-    if (domain_data.size() != number_of_domains)
+    if (domain_data.empty())
     {
         util::log::record
         (
-            "Domain data structure have diffrent number of domain",
+            "Domain data is empty and unavailible",
             util::log::ERROR
         );
 
@@ -85,28 +84,25 @@ manager::status_code manager::scheduler
 
 	// System reclaiming memory from supplying domains
     libvirt::status_code status;
-	for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
+	for (const libvirt::domain::datum_t &datum: domain_data)
 	{
-        libvirt::domain::domain_t &domain = domain_list[rank];
-        libvirt::domain::datum_t  &data   = domain_data[rank];
-
         util::stat::ulong_t memory_chunk 
-            = data.balloon_memory_used
-			+ data.domain_memory_delta;
+            = datum.balloon_memory_used
+			+ datum.domain_memory_delta;
 		
 		// Take back memory if domain is supplying
-		if (data.domain_memory_delta > 0)
+		if (datum.domain_memory_delta > 0)
         {
 			status = libvirt::virDomainSetMemory
             (
-                domain.get(), 
+                datum.domain.get(), 
                 memory_chunk
             );
             if (static_cast<bool>(status))
             {
                 util::log::record
                 (
-                    "Unable to set domain " + std::to_string(rank)
+                    "Unable to set domain " + std::to_string(datum.rank)
                         + "'s memory to " + std::to_string(memory_chunk) 
                         + " bytes",
                     util::log::ERROR
@@ -117,16 +113,13 @@ manager::status_code manager::scheduler
         }
 
 		// Add to number of domains if domain is requesting
-		if (data.domain_memory_delta < 0)
+		if (datum.domain_memory_delta < 0)
 			number_of_requesting_domains += 1;
 	}
 
 	// System providing memory to requesting domains
-	for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
+	for (const libvirt::domain::datum_t &datum: domain_data)
 	{
-        libvirt::domain::domain_t &domain = domain_list[rank];
-        libvirt::domain::datum_t  &datum  = domain_data[rank];
-
 		util::stat::slong_t available_memory 
 			= hardware_memory_limit - MINIMUM_SYSTEM_MEMORY;	
         util::stat::ulong_t maximum_chunk_size
@@ -137,86 +130,86 @@ manager::status_code manager::scheduler
         std::double_t domain_memory_delta_magnitude
             = std::abs(domain_memory_delta);
 
-		// Give away memory if domain is requesting
-		if (domain_memory_delta < 0) 
-		{
-			// Requesting memory size is satisfiable by system
-			if (domain_memory_delta_magnitude < available_memory)
-			{	
-                util::stat::ulong_t memory_chunk 
-                    = datum.balloon_memory_used + domain_memory_delta;
+		// Continue on to give memory to requesting domains
+		if (domain_memory_delta > 0) 
+            continue;
 
-				// Set memory with condition it can only be as big as limit
-				if (memory_chunk > maximum_chunk_size)
-					memory_chunk = maximum_chunk_size;
-				
-				status = libvirt::virDomainSetMemory
-                (
-                    domain.get(), 
-                    memory_chunk
-                );
-                if (static_cast<bool>(status))
-                {
-                    util::log::record
-                    (
-                        "Unable to set domain " + std::to_string(rank)
-                            + "'s memory to " + std::to_string(memory_chunk) 
-                            + " bytes",
-                        util::log::ERROR
-                    );
+        // Requesting memory size is satisfiable by system
+        if (domain_memory_delta_magnitude < available_memory)
+        {	
+            util::stat::ulong_t memory_chunk 
+                = datum.balloon_memory_used + domain_memory_delta;
 
-                    return EXIT_FAILURE;
-                }
-                available_memory -= memory_chunk;
-
-                // Single domain served per iteration
-                if (number_of_requesting_domains > 1)
-                    --number_of_requesting_domains;
-
-                continue;
-            }
-
-            // Equally split remaining if size not satisfiable
-            util::stat::ulong_t partitioned_chunk_size = std::ceil
+            // Set memory with condition it can only be as big as limit
+            if (memory_chunk > maximum_chunk_size)
+                memory_chunk = maximum_chunk_size;
+            
+            status = libvirt::virDomainSetMemory
             (
-                static_cast<std::double_t>(domain_memory_delta_magnitude)
-                    / number_of_requesting_domains
+                datum.domain.get(), 
+                memory_chunk
             );
-            bool domains_requesting = number_of_requesting_domains > 0;
-
-			if (domains_requesting && partitioned_chunk_size < available_memory)
-			{	
-				util::stat::ulong_t memory_chunk = datum.balloon_memory_used
-					+ (domain_memory_delta / number_of_requesting_domains);
-				
-				// Set memory with condition it can only be as big as limit
-				if (memory_chunk > maximum_chunk_size)
-					memory_chunk = maximum_chunk_size;
-
-				status = libvirt::virDomainSetMemory
+            if (static_cast<bool>(status))
+            {
+                util::log::record
                 (
-                    domain.get(), 
-                    memory_chunk
+                    "Unable to set domain " + std::to_string(datum.rank)
+                        + "'s memory to " + std::to_string(memory_chunk) 
+                        + " bytes",
+                    util::log::ERROR
                 );
-                if (static_cast<bool>(status))
-                {
-                    util::log::record
-                    (
-                        "Unable to set domain " + std::to_string(rank)
-                            + "'s memory to " + std::to_string(memory_chunk) 
-                            + " bytes",
-                        util::log::ERROR
-                    );
 
-                    return EXIT_FAILURE;
-                }			
-                available_memory -= memory_chunk;
+                return EXIT_FAILURE;
+            }
+            available_memory -= memory_chunk;
 
-                // Single domain served per iteration
-                if (number_of_requesting_domains > 1)
-                    --number_of_requesting_domains;
-			}
-		}
+            // Single domain served per iteration
+            if (number_of_requesting_domains > 1)
+                --number_of_requesting_domains;
+
+            continue;
+        }
+
+        // Equally split remaining if size not satisfiable
+        util::stat::ulong_t partitioned_chunk_size = std::ceil
+        (
+            static_cast<std::double_t>(domain_memory_delta_magnitude)
+                / number_of_requesting_domains
+        );
+        bool domains_requesting = number_of_requesting_domains > 0;
+
+        if (domains_requesting && partitioned_chunk_size < available_memory)
+        {	
+            util::stat::ulong_t memory_chunk = datum.balloon_memory_used
+                + (domain_memory_delta / number_of_requesting_domains);
+            
+            // Set memory with condition it can only be as big as limit
+            if (memory_chunk > maximum_chunk_size)
+                memory_chunk = maximum_chunk_size;
+
+            status = libvirt::virDomainSetMemory
+            (
+                datum.domain.get(), 
+                memory_chunk
+            );
+            if (static_cast<bool>(status))
+            {
+                util::log::record
+                (
+                    "Unable to set domain " + std::to_string(datum.rank)
+                        + "'s memory to " + std::to_string(memory_chunk) 
+                        + " bytes",
+                    util::log::ERROR
+                );
+
+                return EXIT_FAILURE;
+            }			
+            available_memory -= memory_chunk;
+
+            // Single domain served per iteration
+            if (number_of_requesting_domains > 1)
+                --number_of_requesting_domains;
+        }
 	}
 
     return EXIT_SUCCESS;
