@@ -2,9 +2,10 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cstring>
 #include <functional>
 #include <memory>
-#include <vector>
+#include <unordered_map>
 
 #include <lib/libvirt.hpp>
 #include <stat/statistics.hpp>
@@ -16,19 +17,26 @@ namespace libvirt
 namespace domain 
 {
 
-using rank_t   = std::size_t;
+using rank_t = std::size_t;
+using uuid_t = std::string;
+
 using domain_t = std::unique_ptr
 <
     virDomain,
     std::function<void (virDomain *)>
 >;
-using list_t   = std::vector<domain_t>;
+
+using table_t = std::unordered_map
+<
+    uuid_t, 
+    domain_t 
+>;
 
 [[maybe_unused]]
-status_code list
+status_code table
 (
     const connection_t &connection,
-          list_t       &domain_list
+          table_t      &domain_table
 ) noexcept;
 
 } // domain namespace

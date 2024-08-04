@@ -8,6 +8,7 @@
 #include <log/record.hpp>
 
 #include "domain.hpp"
+#include "stat/statistics.hpp"
 
 
 libvirt::status_code libvirt::domain::list
@@ -20,7 +21,8 @@ libvirt::status_code libvirt::domain::list
     libvirt::virDomain **domains = nullptr;
     std::size_t number_of_domains = libvirt::virConnectListAllDomains
 	(
-		connection.get(), &domains,
+		connection.get(), 
+        &domains,
 	    VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
 	);
     if (number_of_domains < 0)
@@ -39,7 +41,7 @@ libvirt::status_code libvirt::domain::list
     {
         util::log::record
         (
-            "domain::list_t recieved with incorrect number of domains",
+            "domain::table_t recieved with incorrect number of domains",
             util::log::FLAG
         );
         
@@ -86,7 +88,7 @@ libvirt::status_code libvirt::domain::set_collection_period
     {
         util::log::record
         (
-            "domain::list_t is empty", 
+            "domain::table_t is empty", 
             util::log::ERROR
         );
 
@@ -166,7 +168,10 @@ libvirt::status_code libvirt::domain::data
         (
             datum.domain.get(),
             memory_statistics.data(),
-            libvirt::domain::number_of_domain_memory_statistics,
+            static_cast<util::stat::sint_t>
+            (
+                libvirt::domain::number_of_domain_memory_statistics
+            ),
             libvirt::FLAG_NULL
         );
         if (static_cast<bool>(status))

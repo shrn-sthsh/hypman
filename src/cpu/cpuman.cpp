@@ -8,6 +8,7 @@
 
 #include <lib/signal.hpp>
 #include <log/record.hpp>
+#include <stat/statistics.hpp>
 
 #include "sys/scheduler.hpp"
 #include "domain/domain.hpp"
@@ -17,7 +18,9 @@
 #include "cpuman.hpp"
 
 
-static os::signal::signal_t exit_signal = os::signal::SIG_NULL;
+static os::signal::signal_t   exit_signal = os::signal::SIG_NULL;
+static libvirt::vCPU::table_t prev_vCPU_table;
+static util::stat::ulong_t    balancer_iteration = 0;
     
 int main (int argc, char *argv[]) 
 {
@@ -105,6 +108,7 @@ int main (int argc, char *argv[])
         }
         
         std::this_thread::sleep_for(interval);
+        ++balancer_iteration;
 	}
 
 	return EXIT_SUCCESS;
@@ -121,11 +125,11 @@ manager::status_code manager::load_balancer
     /*************************** DOMAIN INFORMATION ***************************/
 
     // Get list of domains
-    libvirt::domain::list_t domain_list;
-    status = libvirt::domain::list
+    libvirt::domain::table_t curr_domain_table;
+    status = libvirt::domain::table
     (
         connection, 
-        domain_list
+        curr_domain_table
     );
     if (static_cast<bool>(status))
     {
@@ -138,12 +142,14 @@ manager::status_code manager::load_balancer
         return EXIT_FAILURE;
     }
 
+    /**************************** vCPU INFORMATION ****************************/
+
     // Create vCPU-domain table 
-    libvirt::vCPU::table_t vCPU_table(domain_list.size());
+    libvirt::vCPU::table_t curr_vCPU_table(curr_domain_table.size());
     status = libvirt::vCPU::table
     (
-        domain_list, 
-        vCPU_table
+        curr_domain_table, 
+        curr_vCPU_table
     );
     if (static_cast<bool>(status))
     {
@@ -156,6 +162,67 @@ manager::status_code manager::load_balancer
         return EXIT_FAILURE;
     }
 
+    // Determine whether domain architecture is the same
+    const auto &[comparable, vCPU_table_diff] = libvirt::vCPU::comparable_state
+    (
+        curr_vCPU_table, 
+        prev_vCPU_table
+    );
+
+    // Save and exit iteration if first
+    if (balancer_iteration == 0)
+    {
+        util::log::record
+        (
+            "First iteration has no base data to estimate on; exiting current "
+            "iteration after saving data",
+            util::log::FLAG
+        );
+
+        // Save data captured 
+        prev_vCPU_table = curr_vCPU_table;
+        
+        return EXIT_SUCCESS;
+    }
+
+    // Note if changes present
+    if (!comparable)
+    {
+        // Change in number of domains requres reset
+        if (vCPU_table_diff.empty())
+        {
+            util::log::record
+            (
+                "Significant change in domain architecture requires skip of "
+                "scheduler iteration",
+                util::log::ABORT
+            );
+
+            return EXIT_FAILURE;
+        }
+
+        // Change in some domains can still allow others to be scheduled
+        util::log::record
+        (
+            "Minor change in intradomain architecture for one or more domains; "
+            "will skip affected domains in scheduler",
+            util::log::FLAG
+        );
+    }
+
+    // Create list of schedulable vCPUs
+    libvirt::vCPU::data_t curr_vCPU_data;
+    status = libvirt::vCPU::data
+    (
+        curr_vCPU_table, 
+        prev_vCPU_table, 
+        vCPU_table_diff, 
+        curr_domain_table, 
+        curr_vCPU_data
+    ); 
+
+    // Save data captured 
+    prev_vCPU_table = curr_vCPU_table;
+
     return EXIT_SUCCESS;
 }
-

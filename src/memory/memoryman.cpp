@@ -17,7 +17,8 @@
 
 
 static os::signal::signal_t exit_signal  = os::signal::SIG_NULL;
-static bool statistics_collection_period = false;
+static bool                 statistics_collection_period = false;
+static util::stat::ulong_t  balancer_iteration = 0;
     
 int main (int argc, char *argv[]) 
 {
@@ -105,6 +106,7 @@ int main (int argc, char *argv[])
         }
         
         std::this_thread::sleep_for(interval);
+        ++balancer_iteration;
 	}
 
 	return EXIT_SUCCESS;
@@ -161,9 +163,7 @@ manager::status_code manager::load_balancer
     }
 
     // Get memory statistics for each domain
-    std::size_t number_of_domains = domain_list.size();
-    libvirt::domain::data_t domain_data(number_of_domains);
-
+    libvirt::domain::data_t domain_data(domain_list.size());
     status = libvirt::domain::data
     (
         domain_list,

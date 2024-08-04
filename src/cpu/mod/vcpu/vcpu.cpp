@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <string>
 
+#include <lib/libvirt.hpp>
 #include <log/record.hpp>
 
 #include "domain/domain.hpp"
@@ -12,63 +13,49 @@
 
 libvirt::status_code libvirt::vCPU::table
 (
-    const libvirt::domain::list_t &domain_list, 
-          libvirt::vCPU::table_t  &vCPU_table
+    const libvirt::domain::table_t &domain_table, 
+          libvirt::vCPU::table_t   &vCPU_table
 ) noexcept
 {
     libvirt::status_code status;
 
-    // Check list size
-    if (domain_list.empty())
+    // Validate table is filled
+    if (domain_table.empty())
     {
         util::log::record
         (
-            "domain::list_t is empty", 
+            "domain::table_t is empty", 
             util::log::ERROR
         );
 
         return EXIT_FAILURE;
     }
-    
-    // Check domain data size
-    std::size_t number_of_domains = domain_list.size();
-    if (vCPU_table.size() != number_of_domains)
-    {
-        util::log::record
-        (
-            "vCPU::table_t recieved with incorrect number of domains",
-            util::log::FLAG
-        );
-        
-        vCPU_table.clear();
-        vCPU_table.resize(number_of_domains); 
-    } 
 
     // Collect vCPU information for vCPUs on each domain 
-    for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
+    for (const auto &[UUID, domain]: domain_table)
     {
-        const libvirt::domain::domain_t &domain    = domain_list[rank];
-              libvirt::vCPU::list_t     &vCPU_list = vCPU_table[rank];
-
         util::stat::sint_t number_of_vCPUs 
             = libvirt::virDomainGetMaxVcpus(domain.get());
         if (number_of_vCPUs < 1)
         {
             util::log::record
             (
-                "Domain " + std::to_string(rank) + " has no available vCPUs", 
+                "Domain " + UUID + " has no available vCPUs", 
                 util::log::STATUS
             );
 
             continue;
         }
-        vCPU_list.resize(static_cast<std::size_t>(number_of_vCPUs));
+        libvirt::vCPU::list_t vCPU_list
+        (
+            static_cast<std::size_t>(number_of_vCPUs)
+        );
 
         status = libvirt::virDomainGetVcpus
         (
             domain.get(), 
             vCPU_list.data(),
-            static_cast<util::stat::sint_t>(vCPU_list.size()),
+            number_of_vCPUs,
             nullptr,
             libvirt::FLAG_NULL
         );
@@ -76,10 +63,184 @@ libvirt::status_code libvirt::vCPU::table
         {
             util::log::record
             (
-                "Unable to retrieve domain information for domain "
-                    + std::to_string(rank),
-
+                "Unable to retrieve domain information for domain " + UUID,
                 util::log::ERROR
+            );
+        }
+
+        vCPU_table.emplace(UUID, vCPU_list);
+    }
+
+    return EXIT_SUCCESS;
+}
+
+libvirt::vCPU::table_diff_t libvirt::vCPU::comparable_state
+(
+    const libvirt::vCPU::table_t &curr_table, 
+    const libvirt::vCPU::table_t &prev_table
+) noexcept
+{
+    // Not equal some if either or both are empty
+    if (curr_table.empty())
+    {
+        util::log::record
+        (
+            "Current iteration table is empty",
+            util::log::STATUS
+        );
+
+        return libvirt::vCPU::table_diff_t(false, {});
+    }
+    if (prev_table.empty())
+    {
+        util::log::record
+        (
+            "Previos iteration table is empty",
+            util::log::STATUS
+        );
+
+        return libvirt::vCPU::table_diff_t(false, {});
+    }
+
+    // Not equal if have different number of domains
+    if(curr_table.size() != prev_table.size())
+    {
+        util::log::record
+        (
+            "Tables have different number of domains",
+            util::log::STATUS
+        );
+
+        return libvirt::vCPU::table_diff_t(false, {});
+    }
+
+    // Not equal if any same ranked domains have a different number of vCPUs
+    uuid_set_t diff;
+    for (const auto &[UUID, list_A]: curr_table)
+    {
+        // Must have the same key
+        const libvirt::vCPU::table_t::const_iterator iterator 
+            = prev_table.find(UUID);
+        if (iterator == prev_table.end())
+        {
+            diff.emplace(UUID);
+            continue;
+        }
+
+        // Must have same number of vCPUs
+        const libvirt::vCPU::list_t list_B = iterator->second;
+        if (list_A.size() != list_B.size())
+            diff.emplace(UUID);
+    }
+
+    if (!diff.empty())
+    {
+        std::string UUID_list;
+        uuid_set_t::iterator UUID = diff.begin();
+
+        UUID_list += *(UUID++); 
+        while (UUID != diff.end())
+            UUID_list += ", " + *(UUID++); 
+
+        util::log::record
+        (
+            "Number of vCPUs is inconsistent for domains of the UUIDs " 
+                + UUID_list,
+            util::log::STATUS
+        );
+
+        return libvirt::vCPU::table_diff_t(false, diff);
+    }
+ 
+    return libvirt::vCPU::table_diff_t(true, diff);
+}
+
+libvirt::status_code libvirt::vCPU::data
+(
+    const libvirt::vCPU::table_t    &curr_vCPU_table, 
+    const libvirt::vCPU::table_t    &prev_vCPU_table,
+    const libvirt::vCPU::uuid_set_t &vCPU_table_diff,
+          libvirt::domain::table_t  &domain_table,
+          libvirt::vCPU::data_t     &data
+) noexcept
+{
+    // Validate tables are filled 
+    if (curr_vCPU_table.empty())
+    {
+        util::log::record
+        (
+            "Current iteration vCPU table is empty",
+            util::log::STATUS
+        );
+
+        return EXIT_FAILURE;
+    }
+    if (prev_vCPU_table.empty())
+    {
+        util::log::record
+        (
+            "Previous iteration vCPU table is empty",
+            util::log::STATUS
+        );
+
+        return EXIT_FAILURE;
+    }
+    if (curr_vCPU_table.empty())
+    {
+        util::log::record
+        (
+            "Current iteration vCPU table is empty",
+            util::log::STATUS
+        );
+
+        return EXIT_FAILURE;
+    }
+
+    // Process each domain and it's vCPUs to create schedulable vCPU list
+    for (auto &[UUID, curr_list]: curr_vCPU_table)
+    {
+        // Skip any domains marked as different between two tables
+        if (vCPU_table_diff.find(UUID) != vCPU_table_diff.end())
+             continue;
+        const libvirt::vCPU::table_t::const_iterator iterator 
+            = prev_vCPU_table.find(UUID);
+        if (iterator == prev_vCPU_table.end())
+            continue;
+
+        // Process each vCPUs in domains present in both tables
+        libvirt::vCPU::list_t prev_list = iterator->second;
+        for (libvirt::vCPU::rank_t rank = 0; rank < curr_list.size(); ++rank)
+        {
+            const libvirt::virVcpuInfo &curr_info = curr_list[rank];
+            const libvirt::virVcpuInfo &prev_info = prev_list[rank];
+
+            util::stat::slong_t curr_usage_time
+                = static_cast<util::stat::slong_t>(curr_info.cpuTime);
+            util::stat::slong_t prev_usage_time
+                = static_cast<util::stat::slong_t>(prev_info.cpuTime);
+
+            // Usage time diffrence between iterations
+            util::stat::slong_t usage_time_norm 
+                = curr_usage_time - prev_usage_time; 
+            if (usage_time_norm < 0)
+            {
+                util::log::record
+                (
+                    "Usage time currupted for vCPU " + std::to_string(rank)
+                        + " on domain " + UUID + "; using zero in place",
+                    util::log::FLAG
+                );
+                
+                usage_time_norm = 0;
+            }
+
+            // Set data and move over domain control to data
+            data.emplace_back
+            (
+                curr_info.number,
+                curr_info.cpu,
+                std::move(domain_table[UUID]),
+                usage_time_norm
             );
         }
     }

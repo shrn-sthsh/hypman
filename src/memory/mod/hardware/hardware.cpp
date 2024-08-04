@@ -16,16 +16,16 @@ libvirt::status_code libvirt::hardware::system_memory_limit
     libvirt::status_code status;
 
     // Get number of memory statistics
-    int number_of_node_memory_statisitcs = 0;
+    util::stat::sint_t number_of_node_memory_statistics = 0;
     libvirt::virNodeGetMemoryStats
     (
         connection.get(), 
         VIR_NODE_MEMORY_STATS_ALL_CELLS, 
         nullptr, 
-        &number_of_node_memory_statisitcs,
+        &number_of_node_memory_statistics,
         libvirt::FLAG_NULL
     );
-    if (number_of_node_memory_statisitcs < 1)
+    if (number_of_node_memory_statistics < 1)
     {
         util::log::record
         (
@@ -40,17 +40,17 @@ libvirt::status_code libvirt::hardware::system_memory_limit
 	// Get hardware memory statistics
     libvirt::hardware::memory_statistics_t memory_statistics
     (
-        number_of_node_memory_statisitcs
+        number_of_node_memory_statistics
     );
     status = libvirt::virNodeGetMemoryStats
     (
         connection.get(), 
         VIR_NODE_MEMORY_STATS_ALL_CELLS, 
         memory_statistics.data(), 
-        &number_of_node_memory_statisitcs, 
+        &number_of_node_memory_statistics, 
         libvirt::FLAG_NULL
     );
-    if (number_of_node_memory_statisitcs < 1)
+    if (number_of_node_memory_statistics < 1)
     {
         util::log::record
         (
