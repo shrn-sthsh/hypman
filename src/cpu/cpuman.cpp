@@ -142,6 +142,7 @@ manager::status_code manager::load_balancer
         return EXIT_FAILURE;
     }
 
+
     /**************************** vCPU INFORMATION ****************************/
 
     // Create vCPU-domain table 
@@ -219,7 +220,40 @@ manager::status_code manager::load_balancer
         vCPU_table_diff, 
         curr_domain_table, 
         curr_vCPU_data
-    ); 
+    );
+    if (static_cast<bool>(status))
+    {
+        util::log::record
+        (
+            "Unable to gather vCPU data from vCPU tables and domain tables",
+            util::log::ABORT
+        );
+
+        return EXIT_FAILURE;
+    }
+
+
+	/************************** HARDWARE INFORMATION **************************/
+
+    util::stat::uint_t number_of_pCPUs;
+    status = libvirt::hardware::node_count
+    (
+        connection, 
+        number_of_pCPUs
+    );
+    if (static_cast<bool>(status))
+    {
+        util::log::record
+        (
+            "Unable to get number of pCPUs active in system",
+            util::log::ABORT
+        );
+
+        return EXIT_FAILURE;
+    }
+
+
+    /**************************** pCPU INFORMATION ****************************/
 
     // Save data captured 
     prev_vCPU_table = curr_vCPU_table;
