@@ -10,9 +10,9 @@
 #include <log/record.hpp>
 #include <stat/statistics.hpp>
 
+#include "pcpu/pcpu.hpp"
 #include "sys/scheduler.hpp"
 #include "domain/domain.hpp"
-#include "hardware/hardware.hpp"
 #include "vcpu/vcpu.hpp"
 
 #include "cpuman.hpp"
@@ -170,6 +170,9 @@ manager::status_code manager::load_balancer
         prev_vCPU_table
     );
 
+    // Save data captured 
+    prev_vCPU_table = curr_vCPU_table;
+
     // Save and exit iteration if first
     if (balancer_iteration == 0)
     {
@@ -180,9 +183,6 @@ manager::status_code manager::load_balancer
             util::log::FLAG
         );
 
-        // Save data captured 
-        prev_vCPU_table = curr_vCPU_table;
-        
         return EXIT_SUCCESS;
     }
 
@@ -211,7 +211,7 @@ manager::status_code manager::load_balancer
         );
     }
 
-    // Create list of schedulable vCPUs
+    // Create list of schedulable vCPUs       
     libvirt::vCPU::data_t curr_vCPU_data;
     status = libvirt::vCPU::data
     (
@@ -233,13 +233,15 @@ manager::status_code manager::load_balancer
     }
 
 
-	/************************** HARDWARE INFORMATION **************************/
+    /**************************** pCPU INFORMATION ****************************/
 
-    util::stat::uint_t number_of_pCPUs;
-    status = libvirt::hardware::node_count
+    // Create list of active pCPUs       
+    libvirt::pCPU::data_t curr_pCPU_data;
+    status = libvirt::pCPU::data
     (
-        connection, 
-        number_of_pCPUs
+        connection,   
+        curr_vCPU_data,
+        curr_pCPU_data
     );
     if (static_cast<bool>(status))
     {
@@ -251,12 +253,6 @@ manager::status_code manager::load_balancer
 
         return EXIT_FAILURE;
     }
-
-
-    /**************************** pCPU INFORMATION ****************************/
-
-    // Save data captured 
-    prev_vCPU_table = curr_vCPU_table;
-
+ 
     return EXIT_SUCCESS;
 }

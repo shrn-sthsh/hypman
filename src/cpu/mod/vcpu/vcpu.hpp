@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -8,11 +9,17 @@
 #include <lib/libvirt.hpp>
 
 #include "domain/domain.hpp"
-#include "pcpu/pcpu.hpp"
 
 
 namespace libvirt 
 {
+
+namespace pCPU 
+{
+
+using rank_t = std::size_t;
+
+} // pCPU namespace
 
 namespace vCPU 
 {

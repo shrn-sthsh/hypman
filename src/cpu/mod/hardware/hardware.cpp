@@ -8,8 +8,8 @@
 
 libvirt::status_code libvirt::hardware::node_count
 (
-    const connection_t       &connection,
-          util::stat::uint_t &number_of_pCPUs
+    const connection_t &connection,
+          std::size_t  &number_of_pCPUs
 ) noexcept
 {
     status_code status;
