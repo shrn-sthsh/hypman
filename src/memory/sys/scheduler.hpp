@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <stat/statistics.hpp>
 
 #include "domain/domain.hpp"
@@ -8,7 +10,7 @@
 namespace manager 
 {
 
-using status_code = int;
+using status_code = std::uint8_t;
 
 [[nodiscard("Scheduler exit status must be checked")]]
 status_code scheduler

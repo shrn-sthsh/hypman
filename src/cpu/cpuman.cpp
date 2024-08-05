@@ -11,7 +11,6 @@
 #include <stat/statistics.hpp>
 
 #include "pcpu/pcpu.hpp"
-#include "sys/scheduler.hpp"
 #include "domain/domain.hpp"
 #include "vcpu/vcpu.hpp"
 
@@ -19,6 +18,7 @@
 
 
 static os::signal::signal_t   exit_signal = os::signal::SIG_NULL;
+
 static libvirt::vCPU::table_t prev_vCPU_table;
 static util::stat::ulong_t    balancer_iteration = 0;
     
@@ -248,6 +248,26 @@ manager::status_code manager::load_balancer
         util::log::record
         (
             "Unable to get number of pCPUs active in system",
+            util::log::ABORT
+        );
+
+        return EXIT_FAILURE;
+    }
+
+
+	/*************************** SCHEDULER ALGORITHM **************************/
+
+    // Run repinning scheduler
+    status = manager::scheduler
+    (
+        curr_vCPU_data, 
+        curr_pCPU_data
+    );
+    if (static_cast<bool>(status))
+    {
+        util::log::record
+        (
+            "Error incurred while running scheduler; exiting iteration",
             util::log::ABORT
         );
 

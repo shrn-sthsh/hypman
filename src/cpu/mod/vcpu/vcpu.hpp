@@ -54,17 +54,20 @@ typedef struct datum_t
     (
         rank_t                 vCPU_rank,
         pCPU::rank_t           pCPU_rank,
+        domain::uuid_t         domain_id,
         domain::domain_t     &&domain,
         util::stat::ulong_t    usage_time
     ) noexcept: 
         vCPU_rank(vCPU_rank), 
         pCPU_rank(pCPU_rank), 
+        domain_id(domain_id), 
         domain(std::move(domain)), 
         usage_time(usage_time)
     {}
 
     rank_t               vCPU_rank;
     pCPU::rank_t         pCPU_rank;
+    domain::uuid_t       domain_id;
     domain::domain_t     domain;
     util::stat::ulong_t  usage_time;
 } datum_t;

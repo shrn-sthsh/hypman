@@ -33,6 +33,19 @@ status_code data
           data_t        &pCPU_data
 ) noexcept;
 
+namespace stat
+{
+
+using statistics_t = std::pair<std::double_t, std::double_t>;
+
+statistics_t mean_and_deviation
+(
+    const data_t &data
+) noexcept;
+
+} // stat namespace
+
 } // pCPU namespace
 
 } // libvirt namespace
+  

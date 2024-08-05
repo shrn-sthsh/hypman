@@ -35,11 +35,11 @@ libvirt::status_code libvirt::domain::table
     // Transfer control of domains data to list
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
     {
-        char UUID[VIR_UUID_STRING_BUFLEN];
+        char domain_id[VIR_UUID_STRING_BUFLEN];
         libvirt::status_code status 
-            = libvirt::virDomainGetUUIDString(domains[rank], UUID);
+            = libvirt::virDomainGetUUIDString(domains[rank], domain_id);
 
-        domain_table[std::string(UUID)] = domain_t
+        domain_table[std::string(domain_id)] = domain_t
         (
             domains[rank],
             [](libvirt::virDomain *domain)

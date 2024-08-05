@@ -4,11 +4,11 @@
 
 #include <lib/libvirt.hpp>
 
+#include "sys/scheduler.hpp"
+
 
 namespace manager
 {
-
-using status_code = int;
 
 [[nodiscard("Load balancer exit status must be checked")]]
 status_code load_balancer

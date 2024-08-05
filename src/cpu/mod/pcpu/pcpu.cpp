@@ -1,6 +1,11 @@
+#include <cmath>
+#include <cstddef>
+#include <functional>
 #include <log/record.hpp>
+#include <numeric>
 
 #include "hardware/hardware.hpp"
+#include "stat/statistics.hpp"
 #include "vcpu/vcpu.hpp"
 
 #include "pcpu.hpp"
@@ -64,4 +69,44 @@ libvirt::status_code libvirt::pCPU::data
     }
 
     return EXIT_SUCCESS;
+}
+
+libvirt::pCPU::stat::statistics_t libvirt::pCPU::stat::mean_and_deviation
+(
+    const data_t &data
+) noexcept
+{
+    if (data.empty())
+        return {0.0, 0.0};
+
+    std::size_t number_of_pCPUs = data.size();
+
+    // Compute mean
+    util::stat::ulong_t sum = std::accumulate
+    (
+        data.begin(), data.end(), 0.0,
+        [] (const util::stat::ulong_t sum, const libvirt::pCPU::datum_t &datum)
+        {
+            return sum + datum.usage_time;
+        }
+    );
+    std::double_t mean = static_cast<std::double_t>(sum) / number_of_pCPUs;
+
+    // Compute standard deviation
+    std::double_t sum_of_squares = std::inner_product
+    (
+        data.begin(), data.end(), data.begin(), 0.0, std::plus<>(),
+        [mean] 
+        (
+            const libvirt::pCPU::datum_t &datum, 
+            const libvirt::pCPU::datum_t &
+        )
+        {
+            std::double_t usage_time = static_cast<double>(datum.usage_time);
+            return (usage_time - mean) * (usage_time - mean);
+        }
+    );
+    std::double_t deviation = std::sqrt(sum_of_squares / number_of_pCPUs);
+
+    return {mean, deviation};
 }
