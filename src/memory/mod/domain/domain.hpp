@@ -24,7 +24,7 @@ using domain_t = std::unique_ptr
     virDomain,
     std::function<void (virDomain *)>
 >;
-using list_t   = std::vector<domain_t>;
+using list_t = std::vector<domain_t>;
 
 [[maybe_unused]]
 status_code list
@@ -47,33 +47,10 @@ typedef struct datum_t
     datum_t(): domain(nullptr) {}
 
     // Move constructor
-    datum_t(datum_t &&other) noexcept:
-        rank(other.rank),
-        domain(std::move(other.domain)), 
-        number_of_vCPUs(other.number_of_vCPUs),
-        balloon_memory_used(other.balloon_memory_used),
-        domain_memory_extra(other.domain_memory_extra),
-        domain_memory_limit(other.domain_memory_limit),
-        domain_memory_delta(other.domain_memory_delta)
-    {}
+    datum_t(datum_t &&other) noexcept;
 
     // Move assignment
-    datum_t &operator=(datum_t &&other) noexcept
-    {
-        if (this != &other)
-        {
-            this->rank                = other.rank; 
-            this->domain              = std::move(other.domain);
-            this->number_of_vCPUs     = other.number_of_vCPUs; 
-            this->balloon_memory_used = other.balloon_memory_used; 
-            this->domain_memory_extra = other.domain_memory_extra; 
-            this->domain_memory_extra = other.domain_memory_extra; 
-            this->domain_memory_limit = other.domain_memory_limit; 
-            this->domain_memory_delta = other.domain_memory_delta; 
-        }
-
-        return *this;
-    }
+    datum_t &operator=(datum_t &&other) noexcept; 
 
     // Delete copy constructor and copy assignment
     datum_t(const datum_t &datum)            = delete;

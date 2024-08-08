@@ -13,6 +13,7 @@
 
 #include "scheduler.hpp"
 
+
 static constexpr std::size_t CPU_HEAP_THRESHOLD = 1 << 10;
 
 manager::status_code manager::scheduler
@@ -206,6 +207,7 @@ manager::status_code manager::scheduler
 
     return EXIT_SUCCESS;
 }
+
 
 bool manager::analyze_prediction
 (

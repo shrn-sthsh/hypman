@@ -46,45 +46,45 @@ manager::status_code manager::scheduler
 
     libvirt::domain::data_t demanders; 
     demanders.reserve(domain_data.size());
-	
-	// Determine memory movement of each domain
+    
+    // Determine memory movement of each domain
     util::stat::slong_t available_memory 
-		= system_memory_limit - MINIMUM_SYSTEM_MEMORY;
+        = system_memory_limit - MINIMUM_SYSTEM_MEMORY;
 
     libvirt::domain::data_t::iterator datum;
-	for (datum = domain_data.begin(); datum != domain_data.end(); ++datum)
+    for (datum = domain_data.begin(); datum != domain_data.end(); ++datum)
     {
-		// Domain's unused memory and memory limit
+        // Domain's unused memory and memory limit
         std::double_t domain_memory_extra = 
             static_cast<std::double_t>(datum->domain_memory_extra);
         std::double_t domain_memory_limit = 
             static_cast<std::double_t>(datum->domain_memory_limit);
 
-		// Movement thresholds
+        // Movement thresholds
         std::double_t SUPPLY_THRESHOLD = SUPPLY_COEFFICIENT * domain_memory_limit;
         std::double_t DEMAND_THRESHOLD = DEMAND_COEFFICIENT * domain_memory_limit;
         
-		// Domain can supply memory (domain loses memory)
+        // Domain can supply memory (domain loses memory)
         if (domain_memory_extra > SUPPLY_THRESHOLD)
         {
             datum->domain_memory_delta
-				= -1 * MINIMUM_DOMAIN_MEMORY * CHANGE_COEFFICIENT;
+                = -1 * MINIMUM_DOMAIN_MEMORY * CHANGE_COEFFICIENT;
             suppliers.emplace_back(std::move(*datum));
 
             continue;
         }
 
-		// Domain needs more memory (domain takes memory)
+        // Domain needs more memory (domain takes memory)
         if (domain_memory_extra < DEMAND_THRESHOLD)
         {
             datum->domain_memory_delta 
-				= MINIMUM_DOMAIN_MEMORY * CHANGE_COEFFICIENT;
+                = MINIMUM_DOMAIN_MEMORY * CHANGE_COEFFICIENT;
             demanders.emplace_back(std::move(*datum));
 
             continue;
         }
 
-		// No change to domain's memory
+        // No change to domain's memory
         datum->domain_memory_delta = 0.0;
         available_memory -= datum->balloon_memory_used;
     }
@@ -118,19 +118,19 @@ manager::status_code manager::scheduler
 
 
     /*********************** MEMORY REDISTRBUTION POLICY **********************/
-	
-	// Save the number of domains needing memory
+    
+    // Save the number of domains needing memory
     std::size_t number_of_requesting_domains = demanders.size();
 
-	// System reclaiming memory from supplying domains
+    // System reclaiming memory from supplying domains
     libvirt::status_code status;
-	for (const libvirt::domain::datum_t &datum: suppliers)
-	{
+    for (const libvirt::domain::datum_t &datum: suppliers)
+    {
         util::stat::ulong_t memory_chunk 
             = datum.balloon_memory_used
-			+ datum.domain_memory_delta;
-		
-		// Take back memory if domain is supplying
+            + datum.domain_memory_delta;
+        
+        // Take back memory if domain is supplying
         status = libvirt::virDomainSetMemory
         (
             datum.domain.get(), 
@@ -148,18 +148,18 @@ manager::status_code manager::scheduler
 
             return EXIT_FAILURE;
         }
-	}
+    }
 
-	// System providing memory to requesting domains
-	for (const libvirt::domain::datum_t &datum: demanders)
-	{	
+    // System providing memory to requesting domains
+    for (const libvirt::domain::datum_t &datum: demanders)
+    {   
         util::stat::ulong_t maximum_chunk_size
             = static_cast<util::stat::ulong_t>(datum.domain_memory_limit);
 
         // Requesting memory size is satisfiable by system
         std::double_t domain_memory_delta = datum.domain_memory_delta;
         if (std::abs(domain_memory_delta) < available_memory)
-        {	
+        {   
             util::stat::ulong_t memory_chunk 
                 = datum.balloon_memory_used + domain_memory_delta;
 
@@ -202,7 +202,7 @@ manager::status_code manager::scheduler
         bool domains_requesting = number_of_requesting_domains > 0;
 
         if (domains_requesting && partitioned_chunk_size < available_memory)
-        {	
+        {   
             util::stat::ulong_t memory_chunk = datum.balloon_memory_used
                 + (domain_memory_delta / number_of_requesting_domains);
             
@@ -226,14 +226,14 @@ manager::status_code manager::scheduler
                 );
 
                 return EXIT_FAILURE;
-            }			
+            }           
             available_memory -= memory_chunk;
 
             // Single domain served per iteration
             if (number_of_requesting_domains > 1)
                 --number_of_requesting_domains;
         }
-	}
+    }
 
     return EXIT_SUCCESS;
 }

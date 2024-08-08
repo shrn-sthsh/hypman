@@ -1,9 +1,9 @@
-#include "record.hpp"
-
 #include <ctime>
 #include <exception>
 #include <iomanip>
 #include <iostream>
+
+#include "record.hpp"
 
 
 void util::log::record
@@ -52,14 +52,16 @@ void util::log::record
 
     if (error_type)
     {
-        std::cerr << time << log::SPACE << prefix << log::SPACE << message << log::NEW_LINE;
+        std::cerr << time << log::SPACE << prefix << log::SPACE 
+            << message << log::NEW_LINE;
         if (flush)
             std::cerr.flush();
     }
 
     else 
     {
-        std::clog << time << log::SPACE << prefix << log::SPACE << message << log::NEW_LINE;
+        std::clog << time << log::SPACE << prefix << log::SPACE 
+            << message << log::NEW_LINE;
         if (flush)
             std::clog.flush(); 
     }

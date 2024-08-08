@@ -1,8 +1,9 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
-#include <log/record.hpp>
 #include <numeric>
+
+#include <log/record.hpp>
 
 #include "hardware/hardware.hpp"
 #include "stat/statistics.hpp"
@@ -70,6 +71,7 @@ libvirt::status_code libvirt::pCPU::data
 
     return EXIT_SUCCESS;
 }
+
 
 libvirt::pCPU::stat::statistics_t libvirt::pCPU::stat::mean_and_deviation
 (

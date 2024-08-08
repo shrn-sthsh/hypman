@@ -9,9 +9,9 @@
 #include <lib/signal.hpp>
 #include <log/record.hpp>
 
-#include "sys/scheduler.hpp"
 #include "domain/domain.hpp"
 #include "hardware/hardware.hpp"
+#include "sys/scheduler.hpp"
 
 #include "memoryman.hpp"
 
@@ -23,16 +23,16 @@ static util::stat::ulong_t  balancer_iteration = 0;
 int main (int argc, char *argv[]) 
 {
     // Validate command arguments
-	if (argc != 2)
-	{
+    if (argc != 2)
+    {
         util::log::record
         (
             "Usage follows as memoryman <interval (ms)>", 
             util::log::ABORT
         );
 
-		return EXIT_FAILURE;
-	} 
+        return EXIT_FAILURE;
+    } 
     
     std::function<bool (const char *)> is_interval = [](const char *string) 
     {
@@ -67,16 +67,16 @@ int main (int argc, char *argv[])
                 libvirt::virConnectClose(connection);
         }
     );
-	if (connection == nullptr)
-	{
+    if (connection == nullptr)
+    {
         util::log::record
         (
             "Unable to make connection to QEMU", 
             util::log::ABORT
         );
 
-		return EXIT_FAILURE;
-	}
+        return EXIT_FAILURE;
+    }
 
     // Set singal handler
     os::signal::signal
@@ -89,8 +89,8 @@ int main (int argc, char *argv[])
     );
 
     // Run memory load balancer
-	while (!static_cast<bool>(exit_signal))
-	{
+    while (!static_cast<bool>(exit_signal))
+    {
         manager::status_code status 
             = manager::load_balancer(connection, interval);
 
@@ -107,10 +107,11 @@ int main (int argc, char *argv[])
         
         std::this_thread::sleep_for(interval);
         ++balancer_iteration;
-	}
+    }
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
+
 
 manager::status_code manager::load_balancer
 (

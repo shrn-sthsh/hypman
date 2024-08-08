@@ -20,11 +20,11 @@ libvirt::status_code libvirt::domain::list
     // Use libvirt API to get the collection of domains
     libvirt::virDomain **domains = nullptr;
     std::size_t number_of_domains = libvirt::virConnectListAllDomains
-	(
-		connection.get(), 
+    (
+        connection.get(), 
         &domains,
-	    VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
-	);
+        VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
+    );
     if (number_of_domains < 0)
     {
         util::log::record
@@ -254,4 +254,39 @@ libvirt::status_code libvirt::domain::data
     }
 
     return EXIT_SUCCESS;
+}
+
+
+libvirt::domain::datum_t::datum_t
+(
+    libvirt::domain::datum_t &&other
+) noexcept:
+    rank(other.rank),
+    domain(std::move(other.domain)), 
+    number_of_vCPUs(other.number_of_vCPUs),
+    balloon_memory_used(other.balloon_memory_used),
+    domain_memory_extra(other.domain_memory_extra),
+    domain_memory_limit(other.domain_memory_limit),
+    domain_memory_delta(other.domain_memory_delta)
+{}
+
+
+libvirt::domain::datum_t &libvirt::domain::datum_t::operator=
+(
+    libvirt::domain::datum_t &&other
+) noexcept
+{
+    if (this != &other)
+    {
+        this->rank                = other.rank; 
+        this->domain              = std::move(other.domain);
+        this->number_of_vCPUs     = other.number_of_vCPUs; 
+        this->balloon_memory_used = other.balloon_memory_used; 
+        this->domain_memory_extra = other.domain_memory_extra; 
+        this->domain_memory_extra = other.domain_memory_extra; 
+        this->domain_memory_limit = other.domain_memory_limit; 
+        this->domain_memory_delta = other.domain_memory_delta; 
+    }
+
+    return *this;
 }

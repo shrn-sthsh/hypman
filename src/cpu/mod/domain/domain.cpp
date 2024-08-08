@@ -17,10 +17,10 @@ libvirt::status_code libvirt::domain::table
     // Use libvirt API to get the collection of domains
     libvirt::virDomain **domains = nullptr;
     std::size_t number_of_domains = libvirt::virConnectListAllDomains
-	(
-		connection.get(), &domains,
-	    VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
-	);
+    (
+        connection.get(), &domains,
+        VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
+    );
     if (number_of_domains < 0)
     {
         util::log::record

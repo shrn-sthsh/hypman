@@ -1,8 +1,8 @@
 #include <cstdlib>
+#include <string>
 
 #include <log/record.hpp>
 #include <stat/statistics.hpp>
-#include <string>
 
 #include "hardware.hpp"
 
@@ -37,6 +37,7 @@ libvirt::status_code libvirt::hardware::node_count
     
     return EXIT_SUCCESS;
 }
+
 
 libvirt::status_code libvirt::hardware::remap
 (

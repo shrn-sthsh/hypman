@@ -74,6 +74,7 @@ libvirt::status_code libvirt::vCPU::table
     return EXIT_SUCCESS;
 }
 
+
 libvirt::vCPU::table_diff_t libvirt::vCPU::comparable_state
 (
     const libvirt::vCPU::table_t &curr_table, 
@@ -154,6 +155,7 @@ libvirt::vCPU::table_diff_t libvirt::vCPU::comparable_state
  
     return libvirt::vCPU::table_diff_t(true, diff);
 }
+
 
 libvirt::status_code libvirt::vCPU::data
 (
