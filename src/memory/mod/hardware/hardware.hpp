@@ -13,7 +13,8 @@ namespace hardware
 {
 
 [[maybe_unused]]
-status_code system_memory_limit
+status_code
+system_memory_limit
 (
     const connection_t        &connection,
           util::stat::slong_t &hardware_memory_limit

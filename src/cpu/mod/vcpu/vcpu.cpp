@@ -11,7 +11,8 @@
 #include "vcpu.hpp"
 
 
-libvirt::status_code libvirt::vCPU::table
+libvirt::status_code
+libvirt::vCPU::table
 (
     const libvirt::domain::table_t &domain_table, 
           libvirt::vCPU::table_t   &vCPU_table
@@ -75,7 +76,8 @@ libvirt::status_code libvirt::vCPU::table
 }
 
 
-libvirt::vCPU::table_diff_t libvirt::vCPU::comparable_state
+libvirt::vCPU::table_diff_t
+libvirt::vCPU::comparable_state
 (
     const libvirt::vCPU::table_t &curr_table, 
     const libvirt::vCPU::table_t &prev_table
@@ -157,7 +159,8 @@ libvirt::vCPU::table_diff_t libvirt::vCPU::comparable_state
 }
 
 
-libvirt::status_code libvirt::vCPU::data
+libvirt::status_code 
+libvirt::vCPU::data
 (
     const libvirt::vCPU::table_t    &curr_vCPU_table, 
     const libvirt::vCPU::table_t    &prev_vCPU_table,

@@ -7,7 +7,8 @@
 #include "hardware.hpp"
 
 
-libvirt::status_code libvirt::hardware::system_memory_limit
+libvirt::status_code
+libvirt::hardware::system_memory_limit
 (
     const connection_t        &connection, 
           util::stat::slong_t &system_memory_limit

@@ -16,7 +16,8 @@
 
 static constexpr std::size_t CPU_HEAP_THRESHOLD = 1 << 10;
 
-manager::status_code manager::scheduler
+manager::status_code 
+manager::scheduler
 (
     libvirt::vCPU::data_t &curr_vCPU_data, 
     libvirt::pCPU::data_t &curr_pCPU_data
@@ -209,7 +210,8 @@ manager::status_code manager::scheduler
 }
 
 
-bool manager::analyze_prediction
+bool
+manager::analyze_prediction
 (
     const libvirt::pCPU::data_t &curr_data, 
     const libvirt::pCPU::data_t &pred_data

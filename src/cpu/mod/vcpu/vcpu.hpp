@@ -32,7 +32,8 @@ using table_t = std::unordered_map
     list_t
 >;
 
-status_code table
+status_code
+table
 (
     const domain::table_t &domain_table,
           vCPU::table_t   &vCPU_table 
@@ -41,7 +42,8 @@ status_code table
 using uuid_set_t = std::unordered_set<domain::uuid_t>;
 using table_diff_t = std::pair<bool, uuid_set_t>;
 
-table_diff_t comparable_state
+table_diff_t
+comparable_state
 (
     const table_t &curr_table,
     const table_t &prev_table
@@ -74,7 +76,8 @@ typedef struct datum_t
 
 using data_t = std::vector<datum_t>;
 
-status_code data
+status_code
+data
 (
     const table_t         &curr_vCPU_table,
     const table_t         &prev_vCPU_table,

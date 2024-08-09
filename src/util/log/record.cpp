@@ -6,7 +6,8 @@
 #include "record.hpp"
 
 
-void util::log::record
+void
+util::log::record
 (
     const std::string             &&message,
     const util::log::message_type   type,
@@ -67,7 +68,8 @@ void util::log::record
     }
 }
 
-util::clock::time_t util::clock::time() noexcept
+util::clock::time_t
+util::clock::time() noexcept
 {
     try
     {

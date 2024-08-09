@@ -11,7 +11,8 @@
 #include "stat/statistics.hpp"
 
 
-libvirt::status_code libvirt::domain::list
+libvirt::status_code
+libvirt::domain::list
 (
     const libvirt::connection_t   &connection, 
           libvirt::domain::list_t &domain_list
@@ -77,7 +78,8 @@ libvirt::status_code libvirt::domain::list
 }
 
 
-libvirt::status_code libvirt::domain::set_collection_period
+libvirt::status_code
+libvirt::domain::set_collection_period
 (
           libvirt::domain::list_t   &domain_list,
     const std::chrono::milliseconds &interval
@@ -120,7 +122,8 @@ libvirt::status_code libvirt::domain::set_collection_period
 }
 
 
-libvirt::status_code libvirt::domain::data
+libvirt::status_code
+libvirt::domain::data
 (
      libvirt::domain::list_t &domain_list, 
      libvirt::domain::data_t &domain_data
@@ -257,6 +260,9 @@ libvirt::status_code libvirt::domain::data
 }
 
 
+libvirt::domain::datum_t::datum_t(): 
+    domain(nullptr) {}
+
 libvirt::domain::datum_t::datum_t
 (
     libvirt::domain::datum_t &&other
@@ -271,7 +277,8 @@ libvirt::domain::datum_t::datum_t
 {}
 
 
-libvirt::domain::datum_t &libvirt::domain::datum_t::operator=
+libvirt::domain::datum_t 
+&libvirt::domain::datum_t::operator=
 (
     libvirt::domain::datum_t &&other
 ) noexcept

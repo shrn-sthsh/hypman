@@ -8,7 +8,8 @@
 #include "domain.hpp"
 
 
-libvirt::status_code libvirt::domain::table
+libvirt::status_code
+libvirt::domain::table
 (
     const libvirt::connection_t    &connection, 
           libvirt::domain::table_t &domain_table

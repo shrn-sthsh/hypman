@@ -17,7 +17,8 @@ namespace hardware
 
 using node_t = std::unique_ptr<virNodeInfo>;
 
-status_code node_count
+status_code
+node_count
 (
     const connection_t &connection,
           std::size_t  &number_of_pCPUs
@@ -26,7 +27,8 @@ status_code node_count
 using byte_t = unsigned char;
 using mapping_t = std::unique_ptr<byte_t>;
 
-status_code remap
+status_code
+remap
 (
     const vCPU::datum_t &datum,
     const std::size_t   &number_of_pCPUs

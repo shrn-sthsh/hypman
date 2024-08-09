@@ -22,7 +22,8 @@ enum message_type
 constexpr bool FLUSH = true;
 constexpr bool ASYNC = true;
 
-void record
+void
+record
 (
     const std::string &&message,
     const message_type  type = STATUS,
@@ -38,7 +39,9 @@ namespace clock
 {
 
 using time_t = std::string;
-time_t time() noexcept;
+
+time_t 
+time() noexcept;
 
 } // clock namespace
 

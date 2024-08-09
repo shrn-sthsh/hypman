@@ -12,7 +12,8 @@
 #include "pcpu.hpp"
 
 
-libvirt::status_code libvirt::pCPU::data
+libvirt::status_code
+libvirt::pCPU::data
 (
     const libvirt::connection_t  &connection,
           libvirt::vCPU::data_t  &vCPU_data, 
@@ -73,7 +74,8 @@ libvirt::status_code libvirt::pCPU::data
 }
 
 
-libvirt::pCPU::stat::statistics_t libvirt::pCPU::stat::mean_and_deviation
+libvirt::pCPU::stat::statistics_t
+libvirt::pCPU::stat::mean_and_deviation
 (
     const data_t &data
 ) noexcept

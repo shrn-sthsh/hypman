@@ -7,7 +7,8 @@
 #include "hardware.hpp"
 
 
-libvirt::status_code libvirt::hardware::node_count
+libvirt::status_code
+libvirt::hardware::node_count
 (
     const connection_t &connection,
           std::size_t  &number_of_pCPUs
@@ -39,7 +40,8 @@ libvirt::status_code libvirt::hardware::node_count
 }
 
 
-libvirt::status_code libvirt::hardware::remap
+libvirt::status_code
+libvirt::hardware::remap
 (
     const vCPU::datum_t &datum,
     const std::size_t   &number_of_pCPUs

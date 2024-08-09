@@ -33,7 +33,8 @@ using table_t = std::unordered_map
 >;
 
 [[maybe_unused]]
-status_code table
+status_code
+table
 (
     const connection_t &connection,
           table_t      &domain_table

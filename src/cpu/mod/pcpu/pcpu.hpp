@@ -26,7 +26,8 @@ typedef struct datum_t
 
 using data_t = std::vector<datum_t>;
 
-status_code data
+status_code
+data
 (
     const connection_t  &connection,
           vCPU::data_t  &vCPU_data,
@@ -38,7 +39,8 @@ namespace stat
 
 using statistics_t = std::pair<std::double_t, std::double_t>;
 
-statistics_t mean_and_deviation
+statistics_t
+mean_and_deviation
 (
     const data_t &data
 ) noexcept;

@@ -27,14 +27,16 @@ using domain_t = std::unique_ptr
 using list_t = std::vector<domain_t>;
 
 [[maybe_unused]]
-status_code list
+status_code
+list
 (
     const connection_t &connection,
           list_t       &domain_list
 ) noexcept;
 
 [[nodiscard("Collection period set action must be checked")]]
-status_code set_collection_period
+status_code
+set_collection_period
 (
           list_t                    &domain_list, 
     const std::chrono::milliseconds &interval
@@ -44,7 +46,7 @@ status_code set_collection_period
 typedef struct datum_t
 {
     // Default constructor 
-    datum_t(): domain(nullptr) {}
+    datum_t();
 
     // Move constructor
     datum_t(datum_t &&other) noexcept;
@@ -69,7 +71,8 @@ typedef struct datum_t
 using data_t = std::vector<datum_t>;
 
 [[maybe_unused]]
-status_code data
+status_code
+data
 (
     list_t &domain_list,
     data_t &domain_data

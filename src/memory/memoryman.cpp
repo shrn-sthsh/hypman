@@ -20,7 +20,12 @@ static os::signal::signal_t exit_signal  = os::signal::SIG_NULL;
 static bool                 statistics_collection_period = false;
 static util::stat::ulong_t  balancer_iteration = 0;
     
-int main (int argc, char *argv[]) 
+int
+main
+(
+    int argc, 
+    char *argv[]
+) 
 {
     // Validate command arguments
     if (argc != 2)
@@ -113,7 +118,8 @@ int main (int argc, char *argv[])
 }
 
 
-manager::status_code manager::load_balancer
+manager::status_code
+manager::load_balancer
 (
     const libvirt::connection_t     &connection, 
     const std::chrono::milliseconds  interval

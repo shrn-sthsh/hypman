@@ -21,7 +21,8 @@ constexpr std::double_t DEMAND_COEFFICIENT = 0.085;
 constexpr std::double_t CHANGE_COEFFICIENT = 0.200;
 
 
-manager::status_code manager::scheduler
+manager::status_code
+manager::scheduler
 (
     libvirt::domain::data_t &domain_data, 
     util::stat::slong_t      system_memory_limit
@@ -41,6 +42,7 @@ manager::status_code manager::scheduler
 
 
     /******************** DETERMINE HOW MEMORY NEEDS TO MOVE ******************/
+
     libvirt::domain::data_t suppliers; 
     suppliers.reserve(domain_data.size());
 
