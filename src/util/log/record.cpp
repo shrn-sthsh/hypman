@@ -10,7 +10,7 @@ void
 util::log::record
 (
     const std::string             &&message,
-    const util::log::message_type   type,
+    const util::log::type   type,
     const bool                      flush
 ) noexcept
 {
@@ -22,26 +22,26 @@ util::log::record
     switch (type) 
     {
     // Log types
-    case STATUS:
+        case util::log::type::STATUS:
         prefix = "STATUS:";
         break;
-    case START:
+        case util::log::type::START:
         prefix = "START:";
         break;
-    case STOP:
+        case util::log::type::STOP:
         prefix = "STOP:";
         break;
 
     // Error types
-    case FLAG:
+        case util::log::type::FLAG:
         prefix = "FLAG:";
         error_type = true;
         break;
-    case ERROR:
+        case util::log::type::ERROR:
         prefix = "ERROR:";
         error_type = true;
         break;
-    case ABORT:
+        case util::log::type::ABORT:
         prefix = "ABORT:";
         error_type = true;
         break;

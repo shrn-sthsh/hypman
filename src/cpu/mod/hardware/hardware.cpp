@@ -27,7 +27,7 @@ libvirt::hardware::node_count
         util::log::record
         (
             "Unable to retreive hardware information",
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
@@ -66,9 +66,9 @@ libvirt::hardware::remap
         util::log::record
         (
             "Unable to map vCPU " + std::to_string(datum.vCPU_rank)
-                + " on domain " + datum.domain_id
+                + " on domain " + datum.domain_uuid
                 + " to pCPU " + std::to_string(datum.pCPU_rank),
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;

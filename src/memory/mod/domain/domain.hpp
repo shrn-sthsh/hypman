@@ -6,10 +6,11 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
-#include <vector>
+#include <unordered_map>
 
 #include <lib/libvirt.hpp>
 #include <stat/statistics.hpp>
+#include <unordered_set>
 
 
 namespace libvirt
@@ -24,22 +25,32 @@ using domain_t = std::unique_ptr
     virDomain,
     std::function<void (virDomain *)>
 >;
-using list_t = std::vector<domain_t>;
+using uuid_t   = std::string;
+using uuid_set_t = std::unordered_set<uuid_t>;
+using table_t  = std::unordered_map<uuid_t, domain_t>;
 
 [[maybe_unused]]
 status_code
-list
+table
 (
     const connection_t &connection,
-          list_t       &domain_list
+          table_t      &table
 ) noexcept;
 
 [[nodiscard("Collection period set action must be checked")]]
 status_code
 set_collection_period
 (
-          list_t                    &domain_list, 
+          table_t                     &curr_domain_table,
+          uuid_set_t                  &prev_domain_uuids,
     const std::chrono::milliseconds &interval
+) noexcept;
+
+status_code
+domain_uuids
+(
+    table_t    &domain_table,
+    uuid_set_t &domain_uuids
 ) noexcept;
 
 
@@ -74,8 +85,8 @@ using data_t = std::vector<datum_t>;
 status_code
 data
 (
-    list_t &domain_list,
-    data_t &domain_data
+    table_t &domain_table,
+    data_t  &domain_data
 ) noexcept;
 
 constexpr std::size_t memory_statistic_balloon_used

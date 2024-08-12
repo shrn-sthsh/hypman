@@ -16,30 +16,31 @@
 #include "memoryman.hpp"
 
 
-static os::signal::signal_t exit_signal  = os::signal::SIG_NULL;
-static bool                 statistics_collection_period = false;
-static util::stat::ulong_t  balancer_iteration = 0;
-    
+static libvirt::domain::uuid_set_t prev_domain_uuids;
+static util::stat::ulong_t      balancer_iteration = 1;
+
 int
-main
+main 
 (
     int argc, 
     char *argv[]
 ) 
 {
-    // Validate command arguments
+    /* Validate command argument */
+    // Must have a single argument -- an interval
     if (argc != 2)
     {
         util::log::record
         (
-            "Usage follows as memoryman <interval (ms)>", 
-            util::log::ABORT
+            "Usage follows as ./memoryman <interval (ms)>", 
+            util::log::type::ABORT
         );
 
         return EXIT_FAILURE;
     } 
-    
-    std::function<bool (const char *)> is_interval = [](const char *string) 
+   
+    // Interval argument must be a positive integer
+    std::function<bool(const char *)> is_interval = [](const char *string) 
     {
         return std::all_of
         (
@@ -55,14 +56,15 @@ main
         util::log::record
         (
             "Interval argument must be a positive integer", 
-            util::log::ABORT
+            util::log::type::ABORT
         );
 
         return EXIT_FAILURE;
     }
     std::chrono::milliseconds interval(std::atoi(argv[1]));
     
-    // Connect to QEMU
+
+    /* Make connection to virtualization host using libvirt */
     libvirt::connection_t connection
     (
         libvirt::virConnectOpen("qemu:///system"),
@@ -77,25 +79,28 @@ main
         util::log::record
         (
             "Unable to make connection to QEMU", 
-            util::log::ABORT
+            util::log::type::ABORT
         );
 
         return EXIT_FAILURE;
     }
 
-    // Set singal handler
+
+    /* Assign a hangler for system interrupts */
+    static os::signal::signal_t exit_signal = os::signal::SIG_DEF;
     os::signal::signal
     (
         os::signal::SIG_INT,
         [](os::signal::signal_t interrupt)
         {
-            exit_signal = os::signal::SIG_DEF; 
+            exit_signal = os::signal::SIG_EXT;
         }
     );
 
-    // Run memory load balancer
+    /* Run memory load balancer at every interval */
     while (!static_cast<bool>(exit_signal))
     {
+        // Call load_balancer
         manager::status_code status 
             = manager::load_balancer(connection, interval);
 
@@ -103,13 +108,16 @@ main
         {
             util::log::record
             (
-                "Scheduler exited on terminating error", 
-                util::log::ABORT
+                "Scheduler exited on terminating error after "
+                    + std::to_string(balancer_iteration) 
+                    + " iterations", 
+                util::log::type::ABORT
             );
 
             return EXIT_FAILURE;
         }
         
+        // Sleep until next interval
         std::this_thread::sleep_for(interval);
         ++balancer_iteration;
     }
@@ -130,58 +138,72 @@ manager::load_balancer
     /*************************** DOMAIN INFORMATION ***************************/
 
     // Get list of domains
-    libvirt::domain::list_t domain_list;
-    status = libvirt::domain::list
+    libvirt::domain::table_t curr_domain_table;
+    status = libvirt::domain::table
     (
         connection, 
-        domain_list
+        curr_domain_table
     );
     if (static_cast<bool>(status))
     {
         util::log::record
         (
             "Unable to retrieve data structure for domains",
-            util::log::ABORT
+            util::log::type::ABORT
         );
 
         return EXIT_FAILURE;
     }
 
-    // Set statistics collection period
-    if (!statistics_collection_period)
+    // Set statistics collection period if not set
+    status = libvirt::domain::set_collection_period
+    (
+        curr_domain_table, 
+        prev_domain_uuids,
+        interval
+    );
+    if (static_cast<bool>(status))
     {
-        status = libvirt::domain::set_collection_period
+        util::log::record
         (
-            domain_list, 
-            interval
+            "Unable to set statistics period for domains",
+            util::log::type::ABORT
         );
-        if (static_cast<bool>(status))
-        {
-            util::log::record
-            (
-                "Unable to set statistics period for domains",
-                util::log::ABORT
-            );
 
-            return EXIT_FAILURE;
-        }
-
-        statistics_collection_period = true;
+        return EXIT_FAILURE;
     }
 
-    // Get memory statistics for each domain
-    libvirt::domain::data_t domain_data(domain_list.size());
+    // Save current domain ids
+    status = libvirt::domain::domain_uuids
+    (
+        curr_domain_table, 
+        prev_domain_uuids
+    );
+    if (static_cast<bool>(status))
+    {
+        util::log::record
+        (
+            "Unable save current domain ids",
+            util::log::type::ABORT
+        );
+
+        return EXIT_FAILURE;
+    }
+    
+    // Get memory statistics for each domain and save table
+    libvirt::domain::data_t curr_domain_data;
+    curr_domain_data.reserve(curr_domain_table.size());
     status = libvirt::domain::data
     (
-        domain_list,
-        domain_data
+        curr_domain_table,
+        curr_domain_data
     );
     if (static_cast<bool>(status))
     {
         util::log::record
         (
             "Unable to retrieve memory statistics for domains",
-            util::log::ABORT
+            util::log::type::ABORT
         );
 
         return EXIT_FAILURE;
@@ -202,7 +224,7 @@ manager::load_balancer
         util::log::record
         (
             "Unable to retrieve hardware memory statistics",
-            util::log::ABORT
+            util::log::type::ABORT
         );
 
         return EXIT_FAILURE;
@@ -214,7 +236,7 @@ manager::load_balancer
     // Run scheduler to determine domains' memory sizes and execute reallocation
     status = manager::scheduler
     (
-        domain_data, 
+        curr_domain_data, 
         system_memory_limit
     );
     if (static_cast<bool>(status))
@@ -222,7 +244,7 @@ manager::load_balancer
         util::log::record
         (
             "Fault incurred in scheduler processing",
-            util::log::ABORT
+            util::log::type::ABORT
         );
 
         return EXIT_FAILURE;

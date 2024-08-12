@@ -34,7 +34,7 @@ manager::scheduler
         util::log::record
         (
             "Domain data is empty and unavailible",
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
@@ -145,7 +145,7 @@ manager::scheduler
                 "Unable to set domain " + std::to_string(datum.rank)
                     + "'s memory to " + std::to_string(memory_chunk) 
                     + " bytes",
-                util::log::ERROR
+                util::log::type::ERROR
             );
 
             return EXIT_FAILURE;
@@ -181,7 +181,7 @@ manager::scheduler
                     "Unable to set domain " + std::to_string(datum.rank)
                         + "'s memory to " + std::to_string(memory_chunk) 
                         + " bytes",
-                    util::log::ERROR
+                    util::log::type::ERROR
                 );
 
                 return EXIT_FAILURE;
@@ -224,7 +224,7 @@ manager::scheduler
                     "Unable to set domain " + std::to_string(datum.rank)
                         + "'s memory to " + std::to_string(memory_chunk) 
                         + " bytes",
-                    util::log::ERROR
+                    util::log::type::ERROR
                 );
 
                 return EXIT_FAILURE;

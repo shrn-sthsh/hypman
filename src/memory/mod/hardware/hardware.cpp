@@ -24,7 +24,7 @@ libvirt::hardware::system_memory_limit
         VIR_NODE_MEMORY_STATS_ALL_CELLS, 
         nullptr, 
         &number_of_node_memory_statistics,
-        libvirt::FLAG_NULL
+        libvirt::FLAG_DEF
     );
     if (number_of_node_memory_statistics < 1)
     {
@@ -32,7 +32,7 @@ libvirt::hardware::system_memory_limit
         (
             "Unable to retrieve number of hardware memory statistics "
             "through libvirt API",
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
@@ -49,14 +49,14 @@ libvirt::hardware::system_memory_limit
         VIR_NODE_MEMORY_STATS_ALL_CELLS, 
         memory_statistics.data(), 
         &number_of_node_memory_statistics, 
-        libvirt::FLAG_NULL
+        libvirt::FLAG_DEF
     );
     if (number_of_node_memory_statistics < 1)
     {
         util::log::record
         (
             "Unable to retrieve hardware memory statistics through libvirt API",
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
@@ -78,7 +78,7 @@ libvirt::hardware::system_memory_limit
         util::log::record
         (
             "Unable to retrieve hardware memory limit",
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;

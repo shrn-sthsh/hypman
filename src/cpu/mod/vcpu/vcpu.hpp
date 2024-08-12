@@ -24,7 +24,7 @@ using rank_t = std::size_t;
 namespace vCPU 
 {
 
-using rank_t = std::size_t;
+using rank_t  = std::size_t;
 using list_t  = std::vector<virVcpuInfo>;
 using table_t = std::unordered_map
 <
@@ -45,8 +45,8 @@ using table_diff_t = std::pair<bool, uuid_set_t>;
 table_diff_t
 comparable_state
 (
-    const table_t &curr_table,
-    const table_t &prev_table
+    const table_t &curr_vCPU_table,
+    const table_t &prev_vCPU_table
 ) noexcept;
 
 
@@ -56,20 +56,20 @@ typedef struct datum_t
     (
         rank_t                 vCPU_rank,
         pCPU::rank_t           pCPU_rank,
-        domain::uuid_t         domain_id,
+        domain::uuid_t         domain_uuid,
         domain::domain_t     &&domain,
         util::stat::ulong_t    usage_time
     ) noexcept: 
         vCPU_rank(vCPU_rank), 
         pCPU_rank(pCPU_rank), 
-        domain_id(domain_id), 
+        domain_uuid(domain_uuid), 
         domain(std::move(domain)), 
         usage_time(usage_time)
     {}
 
     rank_t               vCPU_rank;
     pCPU::rank_t         pCPU_rank;
-    domain::uuid_t       domain_id;
+    domain::uuid_t       domain_uuid;
     domain::domain_t     domain;
     util::stat::ulong_t  usage_time;
 } datum_t;
@@ -83,7 +83,7 @@ data
     const table_t         &prev_vCPU_table,
     const uuid_set_t      &vPCU_table_diff,
           domain::table_t &domain_table,
-          data_t          &data 
+          data_t          &vCPU_data
 ) noexcept;
 
 } // vCPU namespace

@@ -27,7 +27,7 @@ libvirt::domain::table
         util::log::record
         (
             "Unable to retrieve domain data through libvirt API",
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
@@ -36,11 +36,21 @@ libvirt::domain::table
     // Transfer control of domains data to list
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
     {
-        char domain_id[VIR_UUID_STRING_BUFLEN];
+        char uuid[VIR_UUID_STRING_BUFLEN];
         libvirt::status_code status 
-            = libvirt::virDomainGetUUIDString(domains[rank], domain_id);
+            = libvirt::virDomainGetUUIDString(domains[rank], uuid);
+        if (static_cast<bool>(status))
+        {
+            util::log::record
+            (
+                "Unable to retrieve domain id through libvirt API",
+                util::log::type::FLAG
+            );
 
-        domain_table[std::string(domain_id)] = domain_t
+            continue;
+        }
+
+        domain_table[std::string(uuid)] = domain_t
         (
             domains[rank],
             [](libvirt::virDomain *domain)

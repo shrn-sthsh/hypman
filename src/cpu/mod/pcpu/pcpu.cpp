@@ -28,7 +28,7 @@ libvirt::pCPU::data
         util::log::record
         (
             "vCPU::data_t is empty", 
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
@@ -46,7 +46,7 @@ libvirt::pCPU::data
         util::log::record
         (
             "Unable to get number of pCPUs active in system",
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;

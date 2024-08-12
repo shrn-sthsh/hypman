@@ -29,7 +29,7 @@ manager::scheduler
         util::log::record
         (
             "vCPU::data_t is empty", 
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
@@ -39,7 +39,7 @@ manager::scheduler
         util::log::record
         (
             "pCPU::data_t is empty", 
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
@@ -186,8 +186,7 @@ manager::scheduler
         util::log::record
         (
             "Did not remap vCPUs to pCPUs as predicted mapping was estimated "
-            "to likely be unfavorable", 
-            util::log::STATUS
+            "to likely be unfavorable"
         );
 
         return EXIT_SUCCESS;
@@ -201,8 +200,7 @@ manager::scheduler
         util::log::record
         (
             "Error incurred while remapping vCPUs to pCPUs; will continue "
-            "with remaining vCPUs", 
-            util::log::STATUS
+            "with remaining vCPUs"
         );
     }
 

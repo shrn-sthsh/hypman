@@ -12,18 +12,17 @@
 
 
 libvirt::status_code
-libvirt::domain::list
+libvirt::domain::table
 (
-    const libvirt::connection_t   &connection, 
-          libvirt::domain::list_t &domain_list
+    const libvirt::connection_t    &connection, 
+          libvirt::domain::table_t &domain_table
 ) noexcept
 {
     // Use libvirt API to get the collection of domains
     libvirt::virDomain **domains = nullptr;
     std::size_t number_of_domains = libvirt::virConnectListAllDomains
     (
-        connection.get(), 
-        &domains,
+        connection.get(), &domains,
         VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
     );
     if (number_of_domains < 0)
@@ -31,36 +30,30 @@ libvirt::domain::list
         util::log::record
         (
             "Unable to retrieve domain data through libvirt API",
-            util::log::ERROR
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
     }
 
-    // Validate list size
-    if (domain_list.size() != number_of_domains)
-    {
-        util::log::record
-        (
-            "domain::table_t recieved with incorrect number of domains",
-            util::log::FLAG
-        );
-        
-        domain_list.clear();
-        domain_list.resize(number_of_domains);
-
-        std::fill
-        (
-            domain_list.begin(), 
-            domain_list.end(), 
-            nullptr
-        );
-    }
-
     // Transfer control of domains data to list
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
     {
-        domain_list[rank] = domain_t
+        char uuid[VIR_UUID_STRING_BUFLEN];
+        libvirt::status_code status 
+            = libvirt::virDomainGetUUIDString(domains[rank], uuid);
+        if (static_cast<bool>(status))
+        {
+            util::log::record
+            (
+                "Unable to retrieve domain id through libvirt API",
+                util::log::type::FLAG
+            );
+
+            continue;
+        }
+
+        domain_table[std::string(uuid)] = domain_t
         (
             domains[rank],
             [](libvirt::virDomain *domain)
@@ -81,28 +74,65 @@ libvirt::domain::list
 libvirt::status_code
 libvirt::domain::set_collection_period
 (
-          libvirt::domain::list_t   &domain_list,
+          libvirt::domain::table_t    &curr_domain_table,
+          libvirt::domain::uuid_set_t &prev_domain_uuids,
     const std::chrono::milliseconds &interval
 ) noexcept
 {
-    // Check list size
-    if (domain_list.empty())
+    // Validate tables are filled
+    if (curr_domain_table.empty())
     {
         util::log::record
         (
-            "domain::table_t is empty", 
-            util::log::ERROR
+            "Current iteration domain::table_t is empty", 
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
     }
-
-    // Set statistics collection period for every domain
-    for (libvirt::domain::rank_t rank = 0; rank < domain_list.size(); ++rank)
+    if (prev_domain_uuids.empty())
     {
+        util::log::record
+        (
+            "Previous iteration domain::table_t is empty, thus all domains "
+            "must have there collection periods set", 
+            util::log::type::ERROR
+        );
+
+        // Set statistics collection period for all domains
+        for (const auto &[uuid, domain]: curr_domain_table) 
+        {
+            status_code status = libvirt::virDomainSetMemoryStatsPeriod
+            (
+                domain.get(), 
+                std::chrono::duration_cast<std::chrono::seconds>(interval).count(), 
+                VIR_DOMAIN_AFFECT_CURRENT
+            );
+
+            if (static_cast<bool>(status))
+            {
+                util::log::record
+                (
+                    "Unable to set domain " + uuid
+                        + "'s statistics collection period", 
+                    util::log::type::FLAG
+                );
+            }
+        }
+
+        return EXIT_SUCCESS;
+    }
+
+    // Set statistics collection period for every new domain
+    for (const auto &[uuid, domain]: curr_domain_table) 
+    {
+        // If domain already seen, continue to next
+        if (prev_domain_uuids.find(uuid) != prev_domain_uuids.end())
+            continue; 
+
         status_code status = libvirt::virDomainSetMemoryStatsPeriod
         (
-            domain_list[rank].get(), 
+            domain.get(), 
             std::chrono::duration_cast<std::chrono::seconds>(interval).count(), 
             VIR_DOMAIN_AFFECT_CURRENT
         );
@@ -111,9 +141,9 @@ libvirt::domain::set_collection_period
         {
             util::log::record
             (
-                "Unable to set domain " + std::to_string(rank) 
+                "Unable to set domain " + uuid
                     + "'s statistics collection period", 
-                util::log::FLAG
+                util::log::type::FLAG
             );
         }
     }
@@ -123,47 +153,76 @@ libvirt::domain::set_collection_period
 
 
 libvirt::status_code
-libvirt::domain::data
+libvirt::domain::domain_uuids
 (
-     libvirt::domain::list_t &domain_list, 
-     libvirt::domain::data_t &domain_data
+    libvirt::domain::table_t  &domain_table,
+    libvirt::domain::uuid_set_t &domain_uuids
 ) noexcept
 {
-    // Check list size
-    std::size_t number_of_domains = domain_list.size();
-    if (number_of_domains == 0)
+    // Validate table is filled
+    if (domain_table.empty())
     {
         util::log::record
         (
-            "domain::list_t is empty", 
-            util::log::ERROR
+            "Provided domain::table_t is empty", 
+            util::log::type::ERROR
+        );
+
+        return EXIT_FAILURE;
+    }
+    if (!domain_uuids.empty())
+        domain_uuids.clear();
+
+    for (const auto &[uuid, _]: domain_table) 
+        domain_uuids.insert(uuid);
+
+    return EXIT_SUCCESS;
+}
+
+
+libvirt::status_code
+libvirt::domain::data
+(
+     libvirt::domain::table_t &domain_table, 
+     libvirt::domain::data_t  &domain_data
+) noexcept
+{
+    // Validate table is filled
+    if (domain_table.empty())
+    {
+        util::log::record
+        (
+            "domain::table_t is empty", 
+            util::log::type::ERROR
         );
 
         return EXIT_FAILURE;
     }
 
-    // Check domain data size
-    if (domain_data.size() != number_of_domains)
+    // Check domain data capacity and size
+    std::size_t number_of_domains = domain_table.size();
+    if (domain_data.capacity() != number_of_domains || !domain_data.empty())
     {
         util::log::record
         (
-            "domain::list_t recieved with incorrect number of domains",
-            util::log::FLAG
+            "domain::data_t recieved with incorrect number of domains capacity",
+            util::log::type::FLAG
         );
         
         domain_data.clear();
-        domain_data.resize(number_of_domains); 
+        domain_data.reserve(number_of_domains); 
     }
 
     // Get memory statistics for each domain
-    for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
+    libvirt::domain::rank_t rank = 0;
+    for (auto &[domain_uuid, domain]: domain_table)
     { 
-        libvirt::status_code status; 
+        libvirt::status_code status;
 
         // Pass on domain reference 
-        libvirt::domain::datum_t &datum = domain_data[rank];
+        libvirt::domain::datum_t datum;
         datum.rank   = rank;
-        datum.domain = std::move(domain_list[rank]);
+        datum.domain = std::move(domain);
 
         // Get memory statistics for this domain 
         libvirt::domain::memory_statistics_t memory_statistics;
@@ -175,15 +234,15 @@ libvirt::domain::data
             (
                 libvirt::domain::number_of_domain_memory_statistics
             ),
-            libvirt::FLAG_NULL
+            libvirt::FLAG_DEF
         );
         if (static_cast<bool>(status))
         {
             util::log::record
             (
-                "Unable to retrieve domain " + std::to_string(rank) 
+                "Unable to retrieve domain " + domain_uuid
                     + "'s memory statistics through libvirt API", 
-                util::log::FLAG
+                util::log::type::FLAG
             );
         }
 
@@ -198,9 +257,9 @@ libvirt::domain::data
         {
             util::log::record
             (
-                "Unable to retrieve domain " + std::to_string(rank) 
+                "Unable to retrieve domain " + domain_uuid
                     + "'s maxmimum memory limit through libvirt API", 
-                util::log::FLAG
+                util::log::type::FLAG
             );
         }
         datum.domain_memory_limit = information.maxMem;
@@ -236,9 +295,9 @@ libvirt::domain::data
         {
             util::log::record
             (
-                "Unable to retrieve domain " + std::to_string(rank) 
+                "Unable to retrieve domain " + domain_uuid
                     + "'s balloon driver's used memory through libvirt API", 
-                util::log::ERROR
+                util::log::type::ERROR
             );
 
             return EXIT_FAILURE;
@@ -247,13 +306,15 @@ libvirt::domain::data
         {
             util::log::record
             (
-                "Unable to retrieve domain " + std::to_string(rank) 
+                "Unable to retrieve domain " + domain_uuid
                     + "'s unused memory through libvirt API", 
-                util::log::ERROR
+                util::log::type::ERROR
             );
             
             return EXIT_FAILURE;
         } 
+
+        ++rank;
     }
 
     return EXIT_SUCCESS;

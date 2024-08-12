@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 
@@ -9,14 +10,14 @@ namespace util
 namespace log
 {
 
-enum message_type
+enum class type: std::uint32_t
 {
-    STATUS = 0x0000,
-    ERROR  = 0x0001,
-    START  = 0x0002,
-    STOP   = 0x0004,
-    FLAG   = 0x0008,
-    ABORT  = 0x0010 
+    STATUS = 0x00,
+    ERROR  = 0x01,
+    START  = 0x02,
+    STOP   = 0x04,
+    FLAG   = 0x08,
+    ABORT  = 0x10 
 };
 
 constexpr bool FLUSH = true;
@@ -26,7 +27,7 @@ void
 record
 (
     const std::string &&message,
-    const message_type  type = STATUS,
+    const type          type  = type::STATUS,
     const bool          flush = ASYNC
 ) noexcept;
 
