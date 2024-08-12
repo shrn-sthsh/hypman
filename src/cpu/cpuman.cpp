@@ -18,17 +18,28 @@
 
 
 static libvirt::vCPU::table_t prev_vCPU_table;
-static util::stat::ulong_t    balancer_iteration = 1;
+static util::stat::ulong_t    balancer_iteration = 0;
     
-int
-main 
-(
-    int argc, 
-    char *argv[]
-) 
+/**
+ *  @brief Physical CPU Usage Manager
+ *
+ *  @details Operating systems running atop a hypervisor have virtualized 
+ *  CPUs (vCPUs) mapped to physical hardware CPUs (pCPUs) which actually 
+ *  execute task of and on the operating system.
+ *
+ *  A hypervisor will spread the multiple vCPUs requested to be supported 
+ *  by any single OS across many pCPUs available in the hardware for all 
+ *  the OS's, often leading to many vCPUs on any single pCPU.
+ *  
+ *  To balance the changing loads placed on any pCPU caused any or many of 
+ *  changing loads of it's vCPUs, cpuman analyzes the spread of utilization
+ *  amongst all pCPUs, and remaps vCPUs to pCPUs if necessary.
+ */
+int main(int argc, char *argv[]) 
 {
-    /* Validate command argument */
-    // Must have a single argument -- an interval
+    /**************************** VALIDATE COMMAND ****************************/
+
+    // Command should be provided with single interval argument
     if (argc != 2)
     {
         util::log::record
@@ -65,7 +76,9 @@ main
     std::chrono::milliseconds interval(std::atoi(argv[1]));
     
 
-    /* Make connection to virtualization host using libvirt */
+    /********************** CONNECT TO VIRTUALIZATION HOST ********************/
+
+    // Make connection to hypervisor using libvirt
     libvirt::connection_t connection
     (
         libvirt::virConnectOpen("qemu:///system"),
@@ -87,7 +100,9 @@ main
     }
 
 
-    /* Assign a hangler for system interrupts */
+    /************************* ASSIGN INTERRUPT HANDLER ***********************/
+
+    // Interrupt sets accessible exit_signal
     static os::signal::signal_t exit_signal = os::signal::SIG_DEF;
     os::signal::signal
     (
@@ -98,19 +113,19 @@ main
         }
     );
 
-    /* Run vCPU load balancer at every interval */
+    /************************** LAUNCH LOAD BALANCER **************************/
+
+    // Run pCPU load balancer at every interval
     while (!static_cast<bool>(exit_signal))
     {
         // Call load_balancer
-        manager::status_code status 
-            = manager::load_balancer(connection, interval);
-
+        manager::status_code status = manager::load_balancer(connection);
         if (static_cast<bool>(status))
         {
             util::log::record
             (
                 "Scheduler exited on terminating error after "
-                    + std::to_string(balancer_iteration) 
+                    + std::to_string(balancer_iteration + 1) 
                     + " iterations", 
                 util::log::type::ABORT
             );
@@ -127,11 +142,22 @@ main
 }
 
 
+/**
+ *  @brief pCPU Load Balancer
+ *
+ *  @param connection: hypervisor connection via libvirt
+ *
+ *  @details Balances pCPU loads from its vCPUs' demands by collecting data 
+ *  about each domain and its vCPUs as well as data about hardware's active
+ *  pCPUs and running a greedy scheduler mapping vCPUs to pCPUs. Scheduler
+ *  executes based on an analysis of the likelyhood of better performance.
+ *
+ *  @return execution status code
+ */
 manager::status_code
 manager::load_balancer
 (
-    const libvirt::connection_t     &connection, 
-    const std::chrono::milliseconds  interval
+    const libvirt::connection_t &connection
 ) noexcept
 {
     libvirt::status_code status;

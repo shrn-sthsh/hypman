@@ -76,7 +76,7 @@ libvirt::domain::set_collection_period
 (
           libvirt::domain::table_t    &curr_domain_table,
           libvirt::domain::uuid_set_t &prev_domain_uuids,
-    const std::chrono::milliseconds &interval
+    const std::chrono::milliseconds   &interval
 ) noexcept
 {
     // Validate tables are filled

@@ -8,10 +8,10 @@
 
 
 libvirt::status_code
-libvirt::hardware::system_memory_limit
+libvirt::hardware::memory_limit
 (
     const connection_t        &connection, 
-          util::stat::slong_t &system_memory_limit
+          util::stat::slong_t &memory_limit
 ) noexcept
 {
     libvirt::status_code status;
@@ -71,9 +71,9 @@ libvirt::hardware::system_memory_limit
             std::string(field).compare(node_memory_statistics_total)
         );
         if (memory_limit_found)
-            system_memory_limit = static_cast<util::stat::slong_t>(value);
+            memory_limit = static_cast<util::stat::slong_t>(value);
     }
-    if (!system_memory_limit)
+    if (!memory_limit)
     {
         util::log::record
         (

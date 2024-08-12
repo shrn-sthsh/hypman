@@ -1,7 +1,5 @@
 #pragma once
 
-#include <chrono>
-
 #include <lib/libvirt.hpp>
 
 #include "sys/scheduler.hpp"
@@ -14,8 +12,7 @@ namespace manager
 status_code 
 load_balancer
 (
-    const libvirt::connection_t     &connection,
-    const std::chrono::milliseconds  interval
+    const libvirt::connection_t &connection
 ) noexcept;
 
 } // manager namespace

@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "pcpu/pcpu.hpp"
-#include "vcpu/vcpu.hpp"
 
 
 namespace manager

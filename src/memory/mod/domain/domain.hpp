@@ -25,9 +25,9 @@ using domain_t = std::unique_ptr
     virDomain,
     std::function<void (virDomain *)>
 >;
-using uuid_t   = std::string;
+using uuid_t     = std::string;
 using uuid_set_t = std::unordered_set<uuid_t>;
-using table_t  = std::unordered_map<uuid_t, domain_t>;
+using table_t    = std::unordered_map<uuid_t, domain_t>;
 
 [[maybe_unused]]
 status_code

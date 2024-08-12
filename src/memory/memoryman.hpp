@@ -16,7 +16,7 @@ status_code
 load_balancer
 (
     const libvirt::connection_t     &connection,
-    const std::chrono::milliseconds  interval
+    const std::chrono::milliseconds &interval
 ) noexcept;
 
 } // manager namespace

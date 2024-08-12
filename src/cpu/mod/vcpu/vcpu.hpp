@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <string>
 #include <vector>
 
 #include <lib/libvirt.hpp>

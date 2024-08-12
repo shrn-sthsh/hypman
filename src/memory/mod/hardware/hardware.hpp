@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include <lib/libvirt.hpp>
@@ -14,10 +15,10 @@ namespace hardware
 
 [[maybe_unused]]
 status_code
-system_memory_limit
+memory_limit
 (
     const connection_t        &connection,
-          util::stat::slong_t &hardware_memory_limit
+          util::stat::slong_t &memory_limit
 ) noexcept;
 
 using memory_statistics_t = std::vector<virNodeMemoryStats>;
