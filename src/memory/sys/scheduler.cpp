@@ -13,14 +13,38 @@
 #include "scheduler.hpp"
 
 
+// Mimimum memory limits
 constexpr util::stat::slong_t MINIMUM_SYSTEM_MEMORY = 200 << 10;
 constexpr util::stat::slong_t MINIMUM_DOMAIN_MEMORY = 100 << 10;
 
+// Movement coefficients
 constexpr std::double_t SUPPLY_COEFFICIENT = 0.115;
 constexpr std::double_t DEMAND_COEFFICIENT = 0.085;
 constexpr std::double_t CHANGE_COEFFICIENT = 0.200;
 
 
+/**
+ *  @brief Memory Reallocation Scheduler 
+ *
+ *  @param domain data:         Collection data about domains for scheduler's 
+ *                              required reallocation policies
+ *  @param system memory limit: Memory limit dictated by hardware
+ *
+ *  @details Determine how much and where to reallocate memory between domains
+ *  to ensure fairness of performance amongst all domains.
+ *
+ *  Scheduler determines whether a domain can afford to supply or is in need of
+ *  more memmory based much memory is unused by the balloon driver. Then it 
+ *  proceeds to reclaim as much memory as possible from those domains which can 
+ *  prvoided without degrading their performance.
+ *
+ *  Once done, the domains requiring more memory are sorted based on their
+ *  memory pressures from how many vCPUs they have. Finally, domains are served 
+ *  in this priority, and if the amount the require is unsatisfieable, they will 
+ *  get a portion of what is left.
+ *
+ *  @return execution status code
+ */
 manager::status_code
 manager::scheduler
 (
@@ -43,8 +67,8 @@ manager::scheduler
 
     /******************** DETERMINE HOW MEMORY NEEDS TO MOVE ******************/
  
-    libvirt::domain::data_t consumers; 
-    consumers.reserve(domain_data.size());
+    libvirt::domain::data_t demanders; 
+    demanders.reserve(domain_data.size());
 
     libvirt::domain::data_t suppliers; 
     suppliers.reserve(domain_data.size());
@@ -97,7 +121,7 @@ manager::scheduler
         {
             datum->domain_memory_delta 
                 = MINIMUM_DOMAIN_MEMORY * CHANGE_COEFFICIENT;
-            consumers.emplace_back(std::move(*datum));
+            demanders.emplace_back(std::move(*datum));
 
             continue;
         }
@@ -105,7 +129,7 @@ manager::scheduler
     domain_data.clear();
  
     // Save the number of domains needing memory
-    std::size_t number_of_requesting_domains = consumers.size();
+    std::size_t number_of_requesting_domains = demanders.size();
 
 
     /********************** RECLAIM MEMORY FROM SUPPLIERS *********************/
@@ -144,7 +168,7 @@ manager::scheduler
         {
             util::log::record
             (
-                "Unable to set domain " + std::to_string(datum.rank)
+                "Unable to set domain " + datum.uuid
                     + "'s memory to " + std::to_string(memory_chunk) 
                     + " bytes",
                 util::log::type::FLAG
@@ -156,14 +180,13 @@ manager::scheduler
     }
 
  
-    /******************* SORT CONSUMERS BY MEMORY PRESSURE ********************/
+    /******************* SORT DEMANDERS BY MEMORY PRESSURE ********************/
 
     // Sort by memory pressure per vCPU in non-increasing order to prioritize 
     // domains that require the most memory per vCPU
     std::sort
     (
-        consumers.begin(), consumers.end(),
-        [] 
+        demanders.begin(), demanders.end(), [] 
         (
             const libvirt::domain::datum_t &datum_A, 
             const libvirt::domain::datum_t &datum_B
@@ -185,7 +208,7 @@ manager::scheduler
     /*********************** PROVIDE MEMORY TO CONSUMERS **********************/
 
     // System providing memory to requesting domains
-    for (const libvirt::domain::datum_t &datum: consumers)
+    for (const libvirt::domain::datum_t &datum: demanders)
     {   
         util::stat::slong_t maximum_chunk_size = datum.domain_memory_limit;
 
@@ -196,7 +219,7 @@ manager::scheduler
             util::stat::slong_t memory_chunk 
                 = datum.balloon_memory_used + domain_memory_delta;
 
-            // Set memory with condition it can only be as big as limit
+            // Memory chunk is limited by domain's set limit
             if (memory_chunk > maximum_chunk_size)
                 memory_chunk = maximum_chunk_size;
 
@@ -224,7 +247,7 @@ manager::scheduler
             {
                 util::log::record
                 (
-                    "Unable to set domain " + std::to_string(datum.rank)
+                    "Unable to set domain " + datum.uuid
                         + "'s memory to " + std::to_string(memory_chunk) 
                         + " bytes",
                     util::log::type::FLAG
@@ -254,7 +277,7 @@ manager::scheduler
             util::stat::slong_t memory_chunk = datum.balloon_memory_used
                 + (domain_memory_delta / number_of_requesting_domains);
             
-            // Set memory with condition it can only be as big as limit
+            // Memory chunk is limited by domain's set limit
             if (memory_chunk > maximum_chunk_size)
                 memory_chunk = maximum_chunk_size;
 
@@ -282,7 +305,7 @@ manager::scheduler
             {
                 util::log::record
                 (
-                    "Unable to set domain " + std::to_string(datum.rank)
+                    "Unable to set domain " + datum.uuid
                         + "'s memory to " + std::to_string(memory_chunk) 
                         + " bytes",
                     util::log::type::ERROR

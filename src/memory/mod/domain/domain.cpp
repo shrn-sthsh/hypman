@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdlib>
@@ -7,10 +6,22 @@
 #include <lib/libvirt.hpp>
 #include <log/record.hpp>
 
-#include "domain.hpp"
 #include "stat/statistics.hpp"
 
+#include "domain.hpp"
 
+
+/**
+ *  @brief Domain ID to Domain Handle Table Producer
+ *
+ *  @param connection:   hypervisor connection via libvirt
+ *  @param domain table: structure reference to write to
+ *
+ *  @details Creates a table mapping universally unique identifiers (uuid)
+ *  of a domain to it's associated libvirt API domain handle
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
 libvirt::domain::table
 (
@@ -36,7 +47,7 @@ libvirt::domain::table
         return EXIT_FAILURE;
     }
 
-    // Transfer control of domains data to list
+    // Transfer control of domain handles to table structure paired to uuids
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
     {
         char uuid[VIR_UUID_STRING_BUFLEN];
@@ -71,6 +82,19 @@ libvirt::domain::table
 }
 
 
+/**
+ *  @brief Statistics Collection Period Setter
+ *
+ *  @param current domain table:  current iteration UUID-to-domain table
+ *  @param previous domain UUIDs: previous iteration domain UUIDs
+ *  @param interval:              load balancer launching interval and 
+ *                                collection period
+ *
+ *  @details Sets statistics collection period for any domains which have
+ *  had the period set yet
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
 libvirt::domain::set_collection_period
 (
@@ -90,6 +114,8 @@ libvirt::domain::set_collection_period
 
         return EXIT_FAILURE;
     }
+
+    // Set all domains if none were set before
     if (prev_domain_uuids.empty())
     {
         util::log::record
@@ -152,10 +178,20 @@ libvirt::domain::set_collection_period
 }
 
 
+/**
+ *  @brief Domain UUIDs Retriever
+ *
+ *  @param domain table: UUID-to-domain table to retrieve UUIDs from
+ *  @param domain UUIDs: structure reference to write to
+ *
+ *  @details Copy over UUIDs keys of UUID-to-domain table into a set of UUIDs
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
 libvirt::domain::domain_uuids
 (
-    libvirt::domain::table_t  &domain_table,
+    libvirt::domain::table_t    &domain_table,
     libvirt::domain::uuid_set_t &domain_uuids
 ) noexcept
 {
@@ -173,6 +209,7 @@ libvirt::domain::domain_uuids
     if (!domain_uuids.empty())
         domain_uuids.clear();
 
+    // Copy over UUIDs
     for (const auto &[uuid, _]: domain_table) 
         domain_uuids.insert(uuid);
 
@@ -180,6 +217,17 @@ libvirt::domain::domain_uuids
 }
 
 
+/**
+ *  @brief Domain Memory Data Collector
+ *
+ *  @param domain table: UUID-to-domain table to use domain refernces from
+ *  @param domain data:  structure reference to write to
+ *
+ *  @details Collect data about domain memory for all domains required by 
+ *  scheduler to determine reallocation memory chunks 
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
 libvirt::domain::data
 (
@@ -214,14 +262,13 @@ libvirt::domain::data
     }
 
     // Get memory statistics for each domain
-    libvirt::domain::rank_t rank = 0;
-    for (auto &[domain_uuid, domain]: domain_table)
+    for (auto &[uuid, domain]: domain_table)
     { 
         libvirt::status_code status;
 
         // Pass on domain reference 
         libvirt::domain::datum_t datum;
-        datum.rank   = rank;
+        datum.uuid   = uuid;
         datum.domain = std::move(domain);
 
         // Get memory statistics for this domain 
@@ -240,7 +287,7 @@ libvirt::domain::data
         {
             util::log::record
             (
-                "Unable to retrieve domain " + domain_uuid
+                "Unable to retrieve domain " + uuid
                     + "'s memory statistics through libvirt API", 
                 util::log::type::FLAG
             );
@@ -257,7 +304,7 @@ libvirt::domain::data
         {
             util::log::record
             (
-                "Unable to retrieve domain " + domain_uuid
+                "Unable to retrieve domain " + uuid
                     + "'s maxmimum memory limit through libvirt API", 
                 util::log::type::FLAG
             );
@@ -295,7 +342,7 @@ libvirt::domain::data
         {
             util::log::record
             (
-                "Unable to retrieve domain " + domain_uuid
+                "Unable to retrieve domain " + uuid
                     + "'s balloon driver's used memory through libvirt API", 
                 util::log::type::ERROR
             );
@@ -306,29 +353,46 @@ libvirt::domain::data
         {
             util::log::record
             (
-                "Unable to retrieve domain " + domain_uuid
+                "Unable to retrieve domain " + uuid
                     + "'s unused memory through libvirt API", 
                 util::log::type::ERROR
             );
             
             return EXIT_FAILURE;
         } 
-
-        ++rank;
     }
 
     return EXIT_SUCCESS;
 }
 
 
+/**
+ *  @brief Domain Datum Defualt Constructor
+ *
+ *  @details Create empty datum struct
+ */
 libvirt::domain::datum_t::datum_t(): 
     domain(nullptr) {}
 
+
+/**
+ *  @brief Domain Datum Move Constructor
+ *
+ *  @param UUID:                domain's UUID
+ *  @param domain: domain's     libvirt API handle
+ *  @param number_of_vCPUs:     amount of vCPUs running on this domain
+ *  @param balloon memory used: memory used by domain's balloon driver in bytes
+ *  @param domain memory extra: memory unused by domain in bytes
+ *  @param domain memory limit: memory limit enforced by domain in bytes
+ *  @param domain memory delta: memory change determined by scheduler in bytes
+ *
+ *  @details Copy over simple values and move domain handle to new object
+ */
 libvirt::domain::datum_t::datum_t
 (
     libvirt::domain::datum_t &&other
 ) noexcept:
-    rank(other.rank),
+    uuid(other.uuid),
     domain(std::move(other.domain)), 
     number_of_vCPUs(other.number_of_vCPUs),
     balloon_memory_used(other.balloon_memory_used),
@@ -338,15 +402,20 @@ libvirt::domain::datum_t::datum_t
 {}
 
 
-libvirt::domain::datum_t 
-&libvirt::domain::datum_t::operator=
+/**
+ *  @brief Domain Datum Move Assigment
+ *
+ *  @details Copy over simple values and move domain handle to existing object
+ */
+libvirt::domain::datum_t &
+libvirt::domain::datum_t::operator=
 (
     libvirt::domain::datum_t &&other
 ) noexcept
 {
     if (this != &other)
     {
-        this->rank                = other.rank; 
+        this->uuid                = other.uuid;
         this->domain              = std::move(other.domain);
         this->number_of_vCPUs     = other.number_of_vCPUs; 
         this->balloon_memory_used = other.balloon_memory_used; 

@@ -153,9 +153,10 @@ int main(int argc, char *argv[])
  *
  *  @detials Balances domains' memory pressures from tasks consuming hypervisor
  *  provided memory pools by reallocating memory provided to domain balloon 
- *  drivers through system-view redistrubution policy in adherence to reasonable
- *  minimums and maximums for pool size.
+ *  drivers or literal memory chunks through system-view redistrubution policy 
+ *  in adherence to reasonableminimums and maximums for pool size.
  *
+ *  @return execution status code
  */
 manager::status_code
 manager::load_balancer

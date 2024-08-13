@@ -7,6 +7,16 @@
 #include "hardware.hpp"
 
 
+/**
+ *  @brief Hardware Memory Limit Determiner
+ *
+ *  @param connection:   hypervisor connection via libvirt
+ *  @param memory limit: variable reference to write to
+ *
+ *  @details Determine hardware memory limit of system for scheduler's use
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
 libvirt::hardware::memory_limit
 (

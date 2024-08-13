@@ -6,11 +6,12 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <lib/libvirt.hpp>
 #include <stat/statistics.hpp>
-#include <unordered_set>
 
 
 namespace libvirt
@@ -70,7 +71,7 @@ typedef struct datum_t
     datum_t &operator=(const datum_t &datum) = delete;
 
     // Fields
-    rank_t              rank;
+    uuid_t              uuid;
     domain_t            domain;
     std::size_t         number_of_vCPUs;
     util::stat::slong_t balloon_memory_used;
