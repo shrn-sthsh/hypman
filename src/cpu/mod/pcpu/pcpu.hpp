@@ -30,7 +30,7 @@ status_code
 data
 (
     const connection_t  &connection,
-          vCPU::data_t  &vCPU_data,
+    const vCPU::data_t  &vCPU_data,
           data_t        &pCPU_data
 ) noexcept;
 

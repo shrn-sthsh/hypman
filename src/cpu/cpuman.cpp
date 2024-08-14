@@ -8,7 +8,6 @@
 
 #include <lib/signal.hpp>
 #include <log/record.hpp>
-#include <stat/statistics.hpp>
 
 #include "domain/domain.hpp"
 #include "pcpu/pcpu.hpp"
@@ -17,9 +16,11 @@
 #include "cpuman.hpp"
 
 
+// Global state required between load balancer iterations
 static libvirt::vCPU::table_t prev_vCPU_table;
 static util::stat::ulong_t    balancer_iteration = 0;
     
+
 /**
  *  @brief Physical CPU Usage Manager
  *
@@ -215,16 +216,11 @@ manager::load_balancer
         return EXIT_FAILURE;
     }
 
-    // Determine whether domain architecture is the same
-    const auto &[comparable, vCPU_table_diff] = libvirt::vCPU::comparable_state
-    (
-        curr_vCPU_table, 
-        prev_vCPU_table
-    );
-
     // Save and exit iteration if first
     if (balancer_iteration == 0)
     {
+        prev_vCPU_table = curr_vCPU_table;
+
         util::log::record
         (
             "First iteration has no base data to estimate on; exiting current "
@@ -235,12 +231,21 @@ manager::load_balancer
         return EXIT_SUCCESS;
     }
 
+    // Determine whether domain architecture is the same
+    const auto &[comparable, vCPU_table_diff] = libvirt::vCPU::comparable_state
+    (
+        curr_vCPU_table, 
+        prev_vCPU_table
+    );
+
     // Note if changes present
     if (!comparable)
     {
         // Change in number of domains requres reset
         if (vCPU_table_diff.empty())
         {
+            prev_vCPU_table = curr_vCPU_table;
+
             util::log::record
             (
                 "Significant change in domain architecture requires skip of "
@@ -272,6 +277,8 @@ manager::load_balancer
     );
     if (static_cast<bool>(status))
     {
+        prev_vCPU_table = curr_vCPU_table;
+
         util::log::record
         (
             "Unable to gather vCPU data from vCPU tables and domain tables",

@@ -28,7 +28,7 @@ using byte_t = unsigned char;
 using mapping_t = std::unique_ptr<byte_t>;
 
 status_code
-remap
+map
 (
     const vCPU::datum_t &datum,
     const std::size_t   &number_of_pCPUs

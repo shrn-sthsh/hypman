@@ -14,8 +14,33 @@
 #include "scheduler.hpp"
 
 
+// Minimum usage searching type threshold
 static constexpr std::size_t CPU_HEAP_THRESHOLD = 1 << 10;
 
+
+/**
+ *  @brief vCPU pinnning to pCPU Scheduler 
+ *
+ *  @param current pCPU data: Collection of data about pCPUs for scheduler's 
+ *                            required reallocation policies
+ *  @param current vCPU data: Collection of data about vCPUs for scheduler's 
+ *                            required reallocation policies
+ *
+ *  @details Determine the mapping of vCPUs to pCPUs resulting in the most
+ *  fairness of work relative to the loads on any one pCPU. 
+ *
+ *  Scheduler creates a prediction of a mapping of vCPUs to pCPUs that should
+ *  more equally redistribute load by greedily chosing the most busy vCPU in the
+ *  set of all vCPUs yet to be mapped -- updated every iteration -- and mapping 
+ *  it the currently least used pCPU -- also updated every iteration.
+ *
+ *  Once completed, the scheduler will determine through a disperion analysis to
+ *  determine whether remapping is beneficial, and it's also beneficial enough 
+ *  to outweigh the cost of executing the remapping -- the loss of perfomance
+ *  from halting applications as well as loss of cache locality from flushes.
+ *
+ *  @return execution status code
+ */
 manager::status_code 
 manager::scheduler
 (
@@ -45,6 +70,9 @@ manager::scheduler
         return EXIT_FAILURE;
     }
 
+
+    /******************* PRIOTITZE vCPUs BY GREATER LOADS *********************/
+ 
     // Sort vCPUs from greatest to least usage times
     std::sort
     (
@@ -59,6 +87,9 @@ manager::scheduler
         }
     );
  
+
+    /**************** PRIOTITZE pCPUs BY LESSER RELATIVE LOADS ****************/
+
     // Comparator for sorting and sorted insertion
     std::function<bool (libvirt::pCPU::datum_t, libvirt::pCPU::datum_t)> 
     pCPU_usage_comparator = [] 
@@ -89,6 +120,9 @@ manager::scheduler
         // pCPUs with equal usage time and vCPUs
         return true;
     };
+
+
+    /***************** PREDICT A BETTER vCPU to pCPU MAPPING ******************/
 
     // Predict a better mapping: assign vCPUs from highest to lowest 
     // usage time to pCPUs from lowest to highest usage time
@@ -135,7 +169,6 @@ manager::scheduler
             pred_pCPU_datum = std::move(pred_pCPU_data_heap.top());
             pred_pCPU_data_heap.pop();
         }
-
     } 
 
     // Use linear search for minimum element otherwise
@@ -161,6 +194,9 @@ manager::scheduler
         }
     }
 
+
+    /******************** ALIGN PREDICTION FOR COMPARISON *********************/
+
     // Sort back predicted pCPU data into rank order
     std::sort
     (
@@ -174,6 +210,9 @@ manager::scheduler
             return datum_A.pCPU_rank < datum_B.pCPU_rank;
         }
     );
+
+
+    /************* DETERMINE WHETHER PREDICTION IMPROVES STATE ****************/
 
     // Estimate if prediction will likely perform better
     const bool favorable_to_redistribute = manager::analyze_prediction
@@ -192,11 +231,14 @@ manager::scheduler
         return EXIT_SUCCESS;
     }
 
+
+    /**************** APPLY MAPPING DESCRIBED BY PREDICTION *******************/
+
     // Execute remapping of vCPUs to pCPUs as per prediction
     libvirt::status_code status;
     for (const libvirt::vCPU::datum_t &datum: curr_vCPU_data)
     {
-        status = libvirt::hardware::remap(datum, number_of_pCPUs);
+        status = libvirt::hardware::map(datum, number_of_pCPUs);
         util::log::record
         (
             "Error incurred while remapping vCPUs to pCPUs; will continue "
@@ -208,6 +250,19 @@ manager::scheduler
 }
 
 
+/**
+ *  @brief Prediction Perfomance Analyzer
+ *
+ *  @param current pCPU data:   Collection of current data about pCPUs for 
+ *                              scheduler's required reallocation policies
+ *  @param predicted pCPU data: Collection of predicted data about vCPUs for 
+ *                              scheduler's required reallocation policies
+ *
+ *  @details Determine using despersion analysis whether the new mapping of 
+ *  vCPUs to pCPUs is likely perform better than the current mapping.
+ *
+ *  @return whether or not to apply remapping
+ */
 bool
 manager::analyze_prediction
 (

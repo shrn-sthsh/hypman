@@ -50,6 +50,7 @@ libvirt::domain::table
     // Transfer control of domain handles to table structure paired to uuids
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
     {
+        // Get UUID defined by libvirt
         char uuid[VIR_UUID_STRING_BUFLEN];
         libvirt::status_code status 
             = libvirt::virDomainGetUUIDString(domains[rank], uuid);
@@ -64,6 +65,7 @@ libvirt::domain::table
             continue;
         }
 
+        // Add UUID-domain-handle key-value pair to table
         domain_table[std::string(uuid)] = domain_t
         (
             domains[rank],

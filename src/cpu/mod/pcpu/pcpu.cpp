@@ -12,12 +12,25 @@
 #include "pcpu.hpp"
 
 
+/**
+ *  @brief pCPU Data Collector
+ *
+ *  @param connection: hypervisor connection via libvirt
+ *  @param vCPU data:  Collection of data about vCPUs for scheduler's 
+ *                     required reallocation policies
+ *  @param pCPU data:  structure reference to write to
+ *
+ *  @details Collect data about pCPUs status' for all domains required by 
+ *  scheduler to determine remapping
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
 libvirt::pCPU::data
 (
-    const libvirt::connection_t  &connection,
-          libvirt::vCPU::data_t  &vCPU_data, 
-          libvirt::pCPU::data_t  &pCPU_data
+    const libvirt::connection_t &connection,
+    const libvirt::vCPU::data_t &vCPU_data, 
+          libvirt::pCPU::data_t &pCPU_data
 ) noexcept
 {
     status_code status;
@@ -74,10 +87,23 @@ libvirt::pCPU::data
 }
 
 
+/**
+ *  @brief Mean & Standard Deviation of Usage Calcualtor
+ *
+ *  @param connection: hypervisor connection via libvirt
+ *  @param vCPU data:  Collection of data about vCPUs for scheduler's 
+ *                     required reallocation policies
+ *  @param pCPU data:  structure reference to write to
+ *
+ *  @details Collect data about pCPU status for all domains required by 
+ *  scheduler to determine remapping
+ *
+ *  @return execution status code
+ */
 libvirt::pCPU::stat::statistics_t
 libvirt::pCPU::stat::mean_and_deviation
 (
-    const data_t &data
+    const libvirt::pCPU::data_t &data
 ) noexcept
 {
     if (data.empty())
@@ -106,7 +132,8 @@ libvirt::pCPU::stat::mean_and_deviation
             const libvirt::pCPU::datum_t &
         )
         {
-            std::double_t usage_time = static_cast<double>(datum.usage_time);
+            std::double_t usage_time 
+                = static_cast<std::double_t>(datum.usage_time);
             return (usage_time - mean) * (usage_time - mean);
         }
     );

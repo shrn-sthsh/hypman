@@ -8,6 +8,17 @@
 #include "domain.hpp"
 
 
+/**
+ *  @brief Domain ID to Domain Handle Table Producer
+ *
+ *  @param connection:   hypervisor connection via libvirt
+ *  @param domain table: structure reference to write to
+ *
+ *  @details Creates a table mapping universally unique identifiers (uuid)
+ *  of a domain to it's associated libvirt API domain handle
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
 libvirt::domain::table
 (
@@ -36,6 +47,7 @@ libvirt::domain::table
     // Transfer control of domains data to list
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
     {
+        // Get UUID defined by libvirt
         char uuid[VIR_UUID_STRING_BUFLEN];
         libvirt::status_code status 
             = libvirt::virDomainGetUUIDString(domains[rank], uuid);
@@ -50,6 +62,7 @@ libvirt::domain::table
             continue;
         }
 
+        // Add UUID-domain-handle key-value pair to table
         domain_table[std::string(uuid)] = domain_t
         (
             domains[rank],

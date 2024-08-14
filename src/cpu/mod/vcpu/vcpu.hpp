@@ -60,13 +60,7 @@ typedef struct datum_t
         domain::uuid_t         domain_uuid,
         domain::domain_t     &&domain,
         util::stat::ulong_t    usage_time
-    ) noexcept: 
-        vCPU_rank(vCPU_rank), 
-        pCPU_rank(pCPU_rank), 
-        domain_uuid(domain_uuid), 
-        domain(std::move(domain)), 
-        usage_time(usage_time)
-    {}
+    ) noexcept;
 
     rank_t               vCPU_rank;
     pCPU::rank_t         pCPU_rank;
@@ -83,8 +77,8 @@ data
     const table_t         &curr_vCPU_table,
     const table_t         &prev_vCPU_table,
     const uuid_set_t      &vPCU_table_diff,
-          domain::table_t &domain_table,
-          data_t          &vCPU_data
+          domain::table_t &curr_domain_table,
+          data_t          &curr_vCPU_data
 ) noexcept;
 
 } // vCPU namespace

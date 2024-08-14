@@ -7,6 +7,16 @@
 #include "hardware.hpp"
 
 
+/**
+ *  @brief Node Counter
+ *
+ *  @param connection:      hypervisor connection via libvirt
+ *  @param number of pCPUs: variable reference to write to
+ *
+ *  @details Retreives number of active pCPUs in hardware
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
 libvirt::hardware::node_count
 (
@@ -16,6 +26,7 @@ libvirt::hardware::node_count
 {
     status_code status;
 
+    // Get hardware node handle
     libvirt::hardware::node_t node;
     status = libvirt::virNodeGetInfo
     (
@@ -40,8 +51,18 @@ libvirt::hardware::node_count
 }
 
 
+/**
+ *  @brief vCPU to pCPU Mapper
+ *
+ *  @param vCPU datum:      vCPU data relavent to mapping to designated pCPU
+ *  @param number of pCPUs: number of active pCPUs in hardware
+ *
+ *  @details Retreives number of active pCPUs in hardware
+ *
+ *  @return execution status code
+ */
 libvirt::status_code
-libvirt::hardware::remap
+libvirt::hardware::map
 (
     const vCPU::datum_t &datum,
     const std::size_t   &number_of_pCPUs

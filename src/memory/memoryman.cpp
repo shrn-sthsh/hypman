@@ -16,8 +16,10 @@
 #include "memoryman.hpp"
 
 
+// Global state required between load balancer iterations
 static libvirt::domain::uuid_set_t prev_domain_uuids;
 static util::stat::ulong_t         balancer_iteration = 0;
+
 
 /**
  *  @brief Physical CPU Usage Manager

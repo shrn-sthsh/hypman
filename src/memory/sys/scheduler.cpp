@@ -14,19 +14,19 @@
 
 
 // Mimimum memory limits
-constexpr util::stat::slong_t MINIMUM_SYSTEM_MEMORY = 200 << 10;
-constexpr util::stat::slong_t MINIMUM_DOMAIN_MEMORY = 100 << 10;
+static constexpr util::stat::slong_t MINIMUM_SYSTEM_MEMORY = 200 << 10;
+static constexpr util::stat::slong_t MINIMUM_DOMAIN_MEMORY = 100 << 10;
 
 // Movement coefficients
-constexpr std::double_t SUPPLY_COEFFICIENT = 0.115;
-constexpr std::double_t DEMAND_COEFFICIENT = 0.085;
-constexpr std::double_t CHANGE_COEFFICIENT = 0.200;
+static constexpr std::double_t SUPPLY_COEFFICIENT = 0.115;
+static constexpr std::double_t DEMAND_COEFFICIENT = 0.085;
+static constexpr std::double_t CHANGE_COEFFICIENT = 0.200;
 
 
 /**
  *  @brief Memory Reallocation Scheduler 
  *
- *  @param domain data:         Collection data about domains for scheduler's 
+ *  @param domain data:         Collection of data about domains for scheduler's 
  *                              required reallocation policies
  *  @param system memory limit: Memory limit dictated by hardware
  *
@@ -180,7 +180,7 @@ manager::scheduler
     }
 
  
-    /******************* SORT DEMANDERS BY MEMORY PRESSURE ********************/
+    /**************** PRIOTITZE DEMANDERS BY MEMORY PRESSURE ******************/
 
     // Sort by memory pressure per vCPU in non-increasing order to prioritize 
     // domains that require the most memory per vCPU
