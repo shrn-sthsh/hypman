@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 
     /************************* ASSIGN INTERRUPT HANDLER ***********************/
 
-    // Interrupt sets accessible exit_signal
+    // Interrupt sets accessible exit flag
     static os::signal::signal_t exit_signal = os::signal::SIG_DEF;
     os::signal::signal
     (
@@ -115,9 +115,10 @@ int main(int argc, char *argv[])
     /************************** LAUNCH LOAD BALANCER **************************/
 
     // Run pCPU load balancer at every interval
+    util::stat::ulong_t failures = 0, maximum_failures = 3;
     while (!static_cast<bool>(exit_signal))
     {
-        // Call load_balancer
+        // Launch load balancer
         manager::status_code status = manager::load_balancer
         (
             connection, 
@@ -127,13 +128,24 @@ int main(int argc, char *argv[])
         {
             util::log::record
             (
-                "Scheduler exited on terminating error after "
+                "Load balancer exited on terminating error after "
                     + std::to_string(balancer_iteration + 1) 
                     + " iterations", 
-                util::log::type::ABORT
+                util::log::type::ERROR
             );
+            
+            // Abort on too many failures
+            if (++failures >= maximum_failures)
+            {
+                util::log::record
+                (
+                    "Reached maximum number of failures allowed; "
+                    "aborting process",
+                    util::log::type::ABORT
+                );
 
-            return EXIT_FAILURE;
+                return EXIT_FAILURE;
+            }
         }
         
         // Sleep until next interval
@@ -187,7 +199,7 @@ manager::load_balancer
         return EXIT_FAILURE;
     }
 
-    // Set statistics collection period if not set
+    // Set statistics collection period for each domain if not previously set
     status = libvirt::domain::set_collection_period
     (
         curr_domain_table, 
@@ -222,7 +234,7 @@ manager::load_balancer
         return EXIT_FAILURE;
     }
     
-    // Get memory statistics for each domain and save table
+    // Get memory statistics for each domain
     libvirt::domain::data_t curr_domain_data;
     curr_domain_data.reserve(curr_domain_table.size());
     status = libvirt::domain::data

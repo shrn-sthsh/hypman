@@ -1,6 +1,12 @@
 #pragma once
 
 
+/**
+ *  @brief Statistical Data Types Defintions
+ *
+ *  @details Defines data types used in tracking data and storing results 
+ *  of statistical calculations
+ */
 namespace util
 {
 

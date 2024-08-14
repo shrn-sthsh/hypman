@@ -35,7 +35,7 @@ static util::stat::ulong_t    balancer_iteration = 0;
  *  changing loads of it's vCPUs, cpuman analyzes the spread of utilization
  *  amongst all pCPUs, and remaps vCPUs to pCPUs if necessary.
  */
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])  
 {
     /**************************** VALIDATE COMMAND ****************************/
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 
     /************************* ASSIGN INTERRUPT HANDLER ***********************/
 
-    // Interrupt sets accessible exit_signal
+    // Interrupt sets accessible exit flag
     static os::signal::signal_t exit_signal = os::signal::SIG_DEF;
     os::signal::signal
     (
@@ -116,21 +116,33 @@ int main(int argc, char *argv[])
     /************************** LAUNCH LOAD BALANCER **************************/
 
     // Run pCPU load balancer at every interval
+    util::stat::ulong_t failures = 0, maximum_failures = 3;
     while (!static_cast<bool>(exit_signal))
     {
-        // Call load_balancer
+        // Launch load balancer
         manager::status_code status = manager::load_balancer(connection);
         if (static_cast<bool>(status))
         {
             util::log::record
             (
-                "Scheduler exited on terminating error after "
+                "Load balancer exited on terminating error after "
                     + std::to_string(balancer_iteration + 1) 
                     + " iterations", 
-                util::log::type::ABORT
+                util::log::type::ERROR
             );
+            
+            // Abort on too many failures
+            if (++failures >= maximum_failures)
+            {
+                util::log::record
+                (
+                    "Reached maximum number of failures allowed; "
+                    "aborting process",
+                    util::log::type::ABORT
+                );
 
-            return EXIT_FAILURE;
+                return EXIT_FAILURE;
+            }
         }
         
         // Sleep until next interval

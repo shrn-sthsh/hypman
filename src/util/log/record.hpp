@@ -4,12 +4,18 @@
 #include <string>
 
 
+/**
+ *  @brief Logging Utility Header
+ *
+ *  @details Defines data types, flags, and routines related to logging
+ */
 namespace util
 {
 
 namespace log
 {
 
+// Types of messages
 enum class type: std::uint32_t
 {
     STATUS = 0x00,
@@ -20,9 +26,11 @@ enum class type: std::uint32_t
     ABORT  = 0x10 
 };
 
+// Flushing flags
 constexpr bool FLUSH = true;
-constexpr bool ASYNC = true;
+constexpr bool ASYNC = false;
 
+// Record a message to appropriate log
 void
 record
 (
@@ -31,6 +39,7 @@ record
     const bool          flush = ASYNC
 ) noexcept;
 
+// String short hands
 constexpr char SPACE[]    = " ";
 constexpr char NEW_LINE[] = "\n";
 
@@ -41,6 +50,7 @@ namespace clock
 
 using time_t = std::string;
 
+// Get precise time now string
 time_t 
 time() noexcept;
 
