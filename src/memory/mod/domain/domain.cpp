@@ -34,7 +34,7 @@ libvirt::domain::table
     std::size_t number_of_domains = libvirt::virConnectListAllDomains
     (
         connection.get(), &domains,
-        VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
+        libvirt::domain::domains_active_running_flag
     );
     if (number_of_domains < 0)
     {
@@ -51,7 +51,7 @@ libvirt::domain::table
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
     {
         // Get UUID defined by libvirt
-        char uuid[VIR_UUID_STRING_BUFLEN];
+        char uuid[libvirt::domain::uuid_length];
         libvirt::status_code status 
             = libvirt::virDomainGetUUIDString(domains[rank], uuid);
         if (static_cast<bool>(status))
@@ -118,6 +118,7 @@ libvirt::domain::set_collection_period
     }
 
     // Set all domains if none were set before
+    using std::chrono::duration_cast;
     if (prev_domain_uuids.empty())
     {
         util::log::record
@@ -133,8 +134,8 @@ libvirt::domain::set_collection_period
             status_code status = libvirt::virDomainSetMemoryStatsPeriod
             (
                 domain.get(), 
-                std::chrono::duration_cast<std::chrono::seconds>(interval).count(), 
-                VIR_DOMAIN_AFFECT_CURRENT
+                duration_cast<std::chrono::seconds>(interval).count(), 
+                libvirt::domain::domain_affect_current_flag
             );
 
             if (static_cast<bool>(status))
@@ -161,8 +162,8 @@ libvirt::domain::set_collection_period
         status_code status = libvirt::virDomainSetMemoryStatsPeriod
         (
             domain.get(), 
-            std::chrono::duration_cast<std::chrono::seconds>(interval).count(), 
-            VIR_DOMAIN_AFFECT_CURRENT
+            duration_cast<std::chrono::seconds>(interval).count(), 
+            libvirt::domain::domain_affect_current_flag
         );
 
         if (static_cast<bool>(status))

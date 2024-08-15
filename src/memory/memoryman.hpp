@@ -6,6 +6,11 @@
 #include <lib/libvirt.hpp>
 
 
+/**
+ *  @brief Memory Manager Header
+ *
+ *  @details Defines manager's status code and load balancer
+ */
 namespace manager
 {
 

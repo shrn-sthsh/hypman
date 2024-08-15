@@ -31,7 +31,7 @@ libvirt::hardware::memory_limit
     libvirt::virNodeGetMemoryStats
     (
         connection.get(), 
-        VIR_NODE_MEMORY_STATS_ALL_CELLS, 
+        libvirt::hardware::node_memory_all_statistics,
         nullptr, 
         &number_of_node_memory_statistics,
         libvirt::FLAG_DEF
@@ -56,7 +56,7 @@ libvirt::hardware::memory_limit
     status = libvirt::virNodeGetMemoryStats
     (
         connection.get(), 
-        VIR_NODE_MEMORY_STATS_ALL_CELLS, 
+        libvirt::hardware::node_memory_all_statistics,
         memory_statistics.data(), 
         &number_of_node_memory_statistics, 
         libvirt::FLAG_DEF

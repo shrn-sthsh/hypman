@@ -7,6 +7,11 @@
 #include "domain/domain.hpp"
 
 
+/**
+ *  @brief Memory Scheduler Header
+ *
+ *  @details Defines scheduler's rountine
+ */
 namespace manager 
 {
 
