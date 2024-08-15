@@ -168,9 +168,8 @@ main(int argc, char *argv[])
  *
  *  @return execution status code
  */
-static
 manager::status_code
-manager::load_balancer
+static manager::load_balancer
 (
     const libvirt::connection_t &connection
 ) noexcept

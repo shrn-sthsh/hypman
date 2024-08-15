@@ -29,9 +29,12 @@ memory_limit
 
 // Statistics definitions
 using memory_statistics_t = std::vector<virNodeMemoryStats>;
-static const std::string node_memory_statistics_total
-    = std::string(VIR_NODE_MEMORY_STATS_TOTAL);
-static const util::stat::sint_t node_memory_all_statistics
+
+static const std::string 
+node_memory_statistics_total = std::string(VIR_NODE_MEMORY_STATS_TOTAL);
+
+static const util::stat::sint_t 
+node_memory_all_statistics
     = static_cast<util::stat::sint_t>(VIR_NODE_MEMORY_STATS_ALL_CELLS);
 
 } // hardware namespace

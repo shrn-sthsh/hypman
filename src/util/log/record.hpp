@@ -53,7 +53,7 @@ using time_t = std::string;
 // Get precise time now string
 [[nodiscard("Result time string must be used")]]
 time_t 
-time() noexcept;
+static time() noexcept;
 
 } // clock namespace
 

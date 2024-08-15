@@ -88,7 +88,7 @@ util::log::record
  *  @details Capture the immediate time to only to second precision 
  */
 util::clock::time_t
-util::clock::time() noexcept
+static util::clock::time() noexcept
 {
     try
     {

@@ -43,18 +43,16 @@ map
     const std::size_t   &number_of_pCPUs
 ) noexcept;
 
-static inline 
-void 
-map_to_pCPU
+void
+static inline map_to_pCPU
 (
     pCPU::rank_t  rank,
     mapping_t    &mapping
 ) noexcept;
 
 [[nodiscard("Must use result length to call")]]
-static inline 
 util::stat::uint_t 
-map_length
+static inline map_length
 (
     std::size_t number_of_pCPUs
 ) noexcept;

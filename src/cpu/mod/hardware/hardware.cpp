@@ -111,9 +111,8 @@ libvirt::hardware::map
  *
  *  @details Flips pCPU bit in provided map based on provied pCPU rank
  */
-static inline 
 void 
-libvirt::hardware::map_to_pCPU
+static inline libvirt::hardware::map_to_pCPU
 (
     libvirt::pCPU::rank_t         rank,
     libvirt::hardware::mapping_t &mapping
@@ -132,9 +131,8 @@ libvirt::hardware::map_to_pCPU
  *
  *  @return bit map length in bytes
  */
-static inline
 util::stat::uint_t 
-libvirt::hardware::map_length
+static inline libvirt::hardware::map_length
 (
     std::size_t number_of_pCPUs
 ) noexcept

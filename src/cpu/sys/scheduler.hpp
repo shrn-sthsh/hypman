@@ -28,9 +28,8 @@ static constexpr std::double_t DISPERSION_UPPER_BOUND = 0.115;
 static constexpr std::double_t DISPERSION_LOWER_BOUND = 0.075;
 
 [[nodiscard("Must use prediction result to call")]]
-static 
 bool
-analyze_prediction
+static analyze_prediction
 (
     const libvirt::pCPU::data_t &curr_data,
     const libvirt::pCPU::data_t &pred_data

@@ -263,9 +263,8 @@ manager::scheduler
  *
  *  @return whether or not to apply remapping
  */
-static 
 bool
-manager::analyze_prediction
+static manager::analyze_prediction
 (
     const libvirt::pCPU::data_t &curr_data, 
     const libvirt::pCPU::data_t &pred_data

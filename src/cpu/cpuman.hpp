@@ -9,9 +9,8 @@ namespace manager
 {
 
 [[nodiscard("Load balancer exit status must be checked")]]
-static
 status_code 
-load_balancer
+static load_balancer
 (
     const libvirt::connection_t &connection
 ) noexcept;
