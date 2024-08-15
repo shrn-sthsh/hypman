@@ -17,6 +17,7 @@ namespace manager
 using status_code = std::uint8_t;
 
 [[nodiscard("Load balancer exit status must be checked")]]
+static
 status_code 
 load_balancer
 (

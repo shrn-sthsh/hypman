@@ -24,8 +24,8 @@ scheduler
     libvirt::pCPU::data_t &curr_pCPU_data
 ) noexcept;
 
-constexpr std::double_t DISPERSION_UPPER_BOUND = 0.115;
-constexpr std::double_t DISPERSION_LOWER_BOUND = 0.075;
+static constexpr std::double_t DISPERSION_UPPER_BOUND = 0.115;
+static constexpr std::double_t DISPERSION_LOWER_BOUND = 0.075;
 
 [[nodiscard("Must use prediction result to call")]]
 static 

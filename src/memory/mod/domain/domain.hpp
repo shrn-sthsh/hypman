@@ -26,22 +26,22 @@ namespace domain
 {
 
 // Domain data constants
-constexpr util::stat::uint_t domains_active_running_flag 
+static constexpr util::stat::uint_t domains_active_running_flag 
     = static_cast<util::stat::uint_t>
 (
     VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
 );
-constexpr std::size_t uuid_length 
+static constexpr std::size_t uuid_length 
     = static_cast<std::size_t>(VIR_UUID_STRING_BUFLEN);
-constexpr util::stat::uint_t domain_affect_current_flag
+static constexpr util::stat::uint_t domain_affect_current_flag
     = static_cast<util::stat::uint_t>(VIR_DOMAIN_AFFECT_CURRENT);
 
 // Memory statistics constants
-constexpr std::size_t memory_statistic_balloon_used
+static constexpr std::size_t memory_statistic_balloon_used
     = static_cast<std::size_t>(VIR_DOMAIN_MEMORY_STAT_ACTUAL_BALLOON);
-constexpr flag_code memory_statistic_domain_extra
+static constexpr flag_code memory_statistic_domain_extra
     = static_cast<flag_code>(VIR_DOMAIN_MEMORY_STAT_UNUSED);
-constexpr flag_code number_of_domain_memory_statistics 
+static constexpr flag_code number_of_domain_memory_statistics 
     = static_cast<flag_code>(VIR_DOMAIN_MEMORY_STAT_NR);
 
 // data types and structure types
@@ -59,12 +59,13 @@ using table_t    = std::unordered_map<uuid_t, domain_t>;
 typedef struct datum_t
 {
     // Default constructor 
+    explicit
     datum_t();
 
     // Move constructor
     datum_t(datum_t &&other) noexcept;
 
-    // Move assignment
+    // Move assignment 
     datum_t &operator=(datum_t &&other) noexcept; 
 
     // Delete copy constructor and copy assignment
