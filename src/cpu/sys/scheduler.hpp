@@ -6,11 +6,17 @@
 #include "pcpu/pcpu.hpp"
 
 
+/**
+ *  @brief pCPU Scheduler Header
+ *
+ *  @details Defines scheduler's rountine
+ */
 namespace manager
 {
 
 using status_code = std::uint8_t;
 
+[[nodiscard("Scheduler exit status must be checked")]]
 status_code
 scheduler
 (
@@ -21,6 +27,8 @@ scheduler
 constexpr std::double_t DISPERSION_UPPER_BOUND = 0.115;
 constexpr std::double_t DISPERSION_LOWER_BOUND = 0.075;
 
+[[nodiscard("Must use prediction result to call")]]
+static 
 bool
 analyze_prediction
 (

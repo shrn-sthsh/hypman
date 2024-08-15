@@ -263,6 +263,7 @@ manager::scheduler
  *
  *  @return whether or not to apply remapping
  */
+static 
 bool
 manager::analyze_prediction
 (

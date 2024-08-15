@@ -72,7 +72,11 @@ libvirt::hardware::map
 
     // Create mapping
     libvirt::hardware::mapping_t mapping;
-    VIR_USE_CPU(mapping.get(), datum.pCPU_rank);
+    libvirt::hardware::map_to_pCPU
+    (
+        datum.pCPU_rank,
+        mapping
+    );
 
     // Execute mapping
     status = libvirt::virDomainPinVcpu
@@ -80,7 +84,7 @@ libvirt::hardware::map
         datum.domain.get(),
         datum.vCPU_rank,
         mapping.get(), 
-        VIR_CPU_MAPLEN(number_of_pCPUs)
+        libvirt::hardware::map_length(number_of_pCPUs)
     );
     if (static_cast<bool>(status))
     {
@@ -96,4 +100,44 @@ libvirt::hardware::map
     }
 
     return EXIT_SUCCESS;
+}
+
+
+/**
+ *  @brief Set up Map for Specific pCPU to be Mapped
+ *
+ *  @param rank:    rank of pCPU to map
+ *  @param mapping: variable reference to write to
+ *
+ *  @details Flips pCPU bit in provided map based on provied pCPU rank
+ */
+static inline 
+void 
+libvirt::hardware::map_to_pCPU
+(
+    libvirt::pCPU::rank_t         rank,
+    libvirt::hardware::mapping_t &mapping
+) noexcept
+{
+    mapping.get()[rank / 8] |= 1 << rank % 8;
+}
+
+
+/**
+ *  @brief Get Mapping Length
+ *
+ *  @param number of pCPUs: number of active pCPUs in hardware
+ *
+ *  @details Calculates length of bitmap based on number of pCPUs
+ *
+ *  @return bit map length in bytes
+ */
+static inline
+util::stat::uint_t 
+libvirt::hardware::map_length
+(
+    std::size_t number_of_pCPUs
+) noexcept
+{
+    return static_cast<util::stat::uint_t>((number_of_pCPUs + 7) / 8);
 }

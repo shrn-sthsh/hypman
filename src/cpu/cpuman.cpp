@@ -36,7 +36,8 @@ static util::stat::ulong_t    balancer_iteration = 0;
  *  changing loads of it's vCPUs, cpuman analyzes the spread of utilization
  *  amongst all pCPUs, and remaps vCPUs to pCPUs if necessary.
  */
-int main(int argc, char *argv[])  
+int
+main(int argc, char *argv[])  
 {
     /**************************** VALIDATE COMMAND ****************************/
 
@@ -167,6 +168,7 @@ int main(int argc, char *argv[])
  *
  *  @return execution status code
  */
+static
 manager::status_code
 manager::load_balancer
 (

@@ -31,7 +31,7 @@ libvirt::domain::table
     std::size_t number_of_domains = libvirt::virConnectListAllDomains
     (
         connection.get(), &domains,
-        VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
+        libvirt::domain::domains_active_running_flag
     );
     if (number_of_domains < 0)
     {
@@ -44,11 +44,11 @@ libvirt::domain::table
         return EXIT_FAILURE;
     }
 
-    // Transfer control of domains data to list
+    // Transfer control of domain handles to table structure paired to uuids
     for (libvirt::domain::rank_t rank = 0; rank < number_of_domains; ++rank)
     {
         // Get UUID defined by libvirt
-        char uuid[VIR_UUID_STRING_BUFLEN];
+        char uuid[libvirt::domain::uuid_length];
         libvirt::status_code status 
             = libvirt::virDomainGetUUIDString(domains[rank], uuid);
         if (static_cast<bool>(status))
@@ -79,3 +79,4 @@ libvirt::domain::table
 
     return EXIT_SUCCESS;
 }
+

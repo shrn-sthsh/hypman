@@ -11,12 +11,29 @@
 #include <stat/statistics.hpp>
 
 
+/**
+ *  @brief Domain Utility Header
+ *
+ *  @details Defines routines to pull domain memory data
+ */
 namespace libvirt
 {
 
 namespace domain 
 {
 
+// Domain data constants
+constexpr util::stat::uint_t domains_active_running_flag 
+    = static_cast<util::stat::uint_t>
+(
+    VIR_CONNECT_LIST_DOMAINS_ACTIVE | VIR_CONNECT_LIST_DOMAINS_RUNNING
+);
+constexpr std::size_t uuid_length 
+    = static_cast<std::size_t>(VIR_UUID_STRING_BUFLEN);
+constexpr util::stat::uint_t domain_affect_current_flag
+    = static_cast<util::stat::uint_t>(VIR_DOMAIN_AFFECT_CURRENT);
+
+// data types and structure types
 using rank_t = std::size_t;
 using uuid_t = std::string;
 
@@ -25,13 +42,13 @@ using domain_t = std::unique_ptr
     virDomain,
     std::function<void (virDomain *)>
 >;
-
 using table_t = std::unordered_map
 <
     uuid_t, 
     domain_t 
 >;
 
+// Structure creation routines
 [[maybe_unused]]
 status_code
 table
