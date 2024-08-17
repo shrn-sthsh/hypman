@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
+from typing import Final
 
-from lib.hypervisor_util import hypervisor_manager
+from lib.hyp_control import hypervisor_manager
 
 
-VM_PREFIX: str = "test"
+DOMAIN_PREFIX: Final[str] = "test"
 
 if __name__ == '__main__':
-    manager = hypervisor_manager()
-    manager.kill_filtered_domains(VM_PREFIX)
+    manager: hypervisor_manager = hypervisor_manager()
+    manager.kill_filtered_domains(DOMAIN_PREFIX)
 

@@ -13,5 +13,8 @@ pkg_check_modules(LIBVIRT REQUIRED libvirt)
 # Add out of source tree libraries
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib)
 
-# Add source directory for CMake search
+# Add source directory
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
+
+# Add testing directory
+add_subdirectory(${CMAKE_SOURCE_DIR}/test)

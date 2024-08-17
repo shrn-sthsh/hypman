@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from __future__ import print_function
+from typing import Final
 
 from lib.hyp_control import hypervisor_manager
 from lib.test_util   import testing_utilities
@@ -8,7 +8,7 @@ from lib.test_util   import testing_utilities
 import sys
 
 
-VM_PREFIX: str = "test"
+DOMAIN_PREFIX: Final[str] = "test"
 
 def main(args: list[str]):
     if len(args) != 1:
@@ -18,10 +18,10 @@ def main(args: list[str]):
     file_name:                str = sys.argv[1]
     manager:   hypervisor_manager = hypervisor_manager()
 
-    domains:      list[str] = manager.__domain_names()
-    test_domains: list[str] = [machine for machine in domains if machine.startswith(VM_PREFIX)]
+    domains:      list[str] = manager.domain_names()
+    test_domains: list[str] = [machine for machine in domains if machine.startswith(DOMAIN_PREFIX)]
     if not test_domains:
-        print(f"No virtual machines running with {VM_PREFIX} prefix; aborting process")
+        print(f"No virtual machines running with {DOMAIN_PREFIX} prefix; aborting process")
         exit(1)
 
     testing_utilities.copy_files(file_name, test_domains)
